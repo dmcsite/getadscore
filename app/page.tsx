@@ -2299,8 +2299,21 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-800 mt-20">
-        <div className="max-w-6xl mx-auto px-6 py-6 text-center text-zinc-600 text-sm">
-          Built for media buyers who hate wasting money on bad creative.
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="text-center text-zinc-600 text-sm">
+            Built for media buyers who hate wasting money on bad creative.
+          </div>
+          <div className="flex justify-center gap-6 mt-4 text-zinc-500 text-sm">
+            <a href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</a>
+            <a href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</a>
+            <a href="mailto:geoff@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
+          </div>
+          <div className="text-center text-zinc-700 text-xs mt-4">
+            GetAdScore is not affiliated with or endorsed by Meta, Instagram, or TikTok.
+          </div>
+          <div className="text-center text-zinc-700 text-xs mt-2">
+            © {new Date().getFullYear()} DMCSITE LLC. All rights reserved.
+          </div>
         </div>
       </footer>
     </div>
