@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { jsPDF } from "jspdf";
 
@@ -111,6 +111,74 @@ export default function Home() {
   const [showFullText, setShowFullText] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<"facebook" | "instagram" | "tiktok">("facebook");
 
+  // Gating state
+  const [freeReportUsed, setFreeReportUsed] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+
+  // Check localStorage and URL params on mount
+  useEffect(() => {
+    // Check for magic unlock parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const unlockParam = urlParams.get("unlock");
+    if (unlockParam === "getadscore2024") {
+      localStorage.setItem("isPaid", "true");
+      setIsPaid(true);
+      // Remove the parameter from URL without reload
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    // Check localStorage for existing state
+    const storedIsPaid = localStorage.getItem("isPaid") === "true";
+    const storedFreeUsed = localStorage.getItem("freeReportUsed") === "true";
+
+    setIsPaid(storedIsPaid);
+    setFreeReportUsed(storedFreeUsed);
+  }, []);
+
+  // Computed: should show full results?
+  const hasFullAccess = isPaid || !freeReportUsed;
+
+  // Locked section wrapper component
+  const LockedSection = ({ children, sectionName }: { children: React.ReactNode; sectionName: string }) => {
+    if (hasFullAccess) {
+      return <>{children}</>;
+    }
+    return (
+      <div className="relative">
+        <div className="blur-sm pointer-events-none select-none">
+          {children}
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/60 backdrop-blur-[2px] rounded-xl">
+          <div className="text-center p-6 max-w-sm">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+              <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 className="text-zinc-100 font-semibold mb-2">Unlock Full Analysis</h3>
+            <p className="text-zinc-400 text-sm mb-4">Get detailed scoring, actionable fixes, and PDF exports</p>
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://buy.stripe.com/dRm14naE29pbcLbfJg6Zy00"
+                className="block w-full py-2 px-4 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-sm font-medium transition-colors"
+              >
+                Individual — $49/mo
+              </a>
+              <a
+                href="https://buy.stripe.com/dRmdR96nM6cZ12t0Om6Zy01"
+                className="block w-full py-2 px-4 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-medium transition-colors"
+              >
+                Agency — $149/mo
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Collapsible section states
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     hookAnalysis: true,
@@ -189,12 +257,18 @@ export default function Home() {
 
       setResult(data);
       setPendingFile(null);
+
+      // Mark free report as used (only if not already paid)
+      if (!isPaid && !freeReportUsed) {
+        localStorage.setItem("freeReportUsed", "true");
+        setFreeReportUsed(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
-  }, [pendingFile, primaryText, headline, description]);
+  }, [pendingFile, primaryText, headline, description, isPaid, freeReportUsed]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -1548,6 +1622,26 @@ export default function Home() {
         ) : result ? (
           /* Results Section */
           <div className="fade-in">
+            {/* Free Report Used Banner */}
+            {!hasFullAccess && (
+              <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-amber-200 text-sm">
+                    You&apos;ve used your free report. <span className="text-amber-100 font-medium">Subscribe for unlimited access.</span>
+                  </p>
+                </div>
+                <a
+                  href="#pricing"
+                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium transition-colors flex-shrink-0"
+                >
+                  View Plans
+                </a>
+              </div>
+            )}
+
             {/* Score & Verdict Header - Above the fold */}
             <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-zinc-900 to-zinc-800 border border-zinc-700">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -1811,9 +1905,13 @@ export default function Home() {
 
                 {/* Download PDF Button */}
                 <button
-                  onClick={generatePDF}
+                  onClick={hasFullAccess ? generatePDF : () => setShowPdfModal(true)}
                   disabled={isGeneratingPdf}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    hasFullAccess
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                      : "bg-zinc-800 text-zinc-400 cursor-pointer"
+                  }`}
                 >
                   {isGeneratingPdf ? (
                     <>
@@ -1822,9 +1920,16 @@ export default function Home() {
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                      {!hasFullAccess && (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      )}
+                      {hasFullAccess && (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      )}
                       Download PDF Report
                     </>
                   )}
@@ -1835,6 +1940,7 @@ export default function Home() {
               <div className="lg:col-span-2 space-y-6">
                 {/* Hook Analysis (Video Only) */}
                 {result.hookAnalysis && (
+                  <LockedSection sectionName="hookAnalysis">
                   <div className="rounded-xl bg-purple-500/5 border border-purple-500/20 overflow-hidden">
                     <button
                       onClick={() => toggleSection('hookAnalysis')}
@@ -1883,9 +1989,11 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+                  </LockedSection>
                 )}
 
                 {/* Category Breakdown */}
+                <LockedSection sectionName="scoreBreakdown">
                 <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
                   <button
                     onClick={() => toggleSection('scoreBreakdown')}
@@ -1927,9 +2035,11 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                </LockedSection>
 
                 {/* Ad Copy Analysis */}
                 {result.copyAnalysis && (
+                  <LockedSection sectionName="copyAnalysis">
                   <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 overflow-hidden">
                     <button
                       onClick={() => toggleSection('copyAnalysis')}
@@ -2024,10 +2134,12 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+                  </LockedSection>
                 )}
 
                 {/* Audio Analysis (Video Only) */}
                 {result.audioAnalysis && (
+                  <LockedSection sectionName="audioAnalysis">
                   <div className="rounded-xl bg-amber-500/5 border border-amber-500/20 overflow-hidden">
                     <button
                       onClick={() => toggleSection('audioAnalysis')}
@@ -2121,10 +2233,12 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+                  </LockedSection>
                 )}
 
                 {/* Video Notes (Video Only) */}
                 {result.videoNotes && (
+                  <LockedSection sectionName="videoNotes">
                   <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
                     <button
                       onClick={() => toggleSection('videoNotes')}
@@ -2188,9 +2302,11 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
+                  </LockedSection>
                 )}
 
                 {/* Top 3 Fixes */}
+                <LockedSection sectionName="topFixes">
                 <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
                   <button
                     onClick={() => toggleSection('topFixes')}
@@ -2225,6 +2341,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                </LockedSection>
 
                 {/* Policy Flags */}
                 {result.policyFlags.length > 0 && (
@@ -2245,6 +2362,7 @@ export default function Home() {
                 )}
 
                 {/* What's Working */}
+                <LockedSection sectionName="whatsWorking">
                 <div className="rounded-xl bg-green-500/5 border border-green-500/20 overflow-hidden">
                   <button
                     onClick={() => toggleSection('whatsWorking')}
@@ -2269,6 +2387,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                </LockedSection>
               </div>
             </div>
           </div>
@@ -2300,6 +2419,51 @@ export default function Home() {
               <span className="text-white font-mono text-sm">
                 {formatTimestamp(zoomedFrame.timestamp)}
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PDF Unlock Modal */}
+      {showPdfModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setShowPdfModal(false)}
+        >
+          <div
+            className="relative bg-zinc-900 rounded-2xl border border-zinc-700 p-8 max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowPdfModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-zinc-100 mb-2">Subscribe to Unlock PDF Exports</h3>
+              <p className="text-zinc-400 text-sm mb-6">Get unlimited ad scoring, full analysis, and downloadable PDF reports.</p>
+              <div className="space-y-3">
+                <a
+                  href="https://buy.stripe.com/dRm14naE29pbcLbfJg6Zy00"
+                  className="block w-full py-3 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-medium transition-colors"
+                >
+                  Individual — $49/mo
+                </a>
+                <a
+                  href="https://buy.stripe.com/dRmdR96nM6cZ12t0Om6Zy01"
+                  className="block w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-colors"
+                >
+                  Agency — $149/mo
+                </a>
+              </div>
             </div>
           </div>
         </div>
