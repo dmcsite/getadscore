@@ -1537,7 +1537,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : result ? (
           /* Results Section */
           <div className="fade-in">
             {/* Score & Verdict Header - Above the fold */}
@@ -2264,7 +2264,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </main>
 
       {/* Zoom Modal */}
