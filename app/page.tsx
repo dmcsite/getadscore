@@ -2306,7 +2306,7 @@ export default function Home() {
           <div className="flex justify-center gap-6 mt-4 text-zinc-500 text-sm">
             <a href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</a>
-            <a href="mailto:geoff@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
+            <a href="mailto:support@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
           </div>
           <div className="text-center text-zinc-700 text-xs mt-4">
             GetAdScore is not affiliated with or endorsed by Meta, Instagram, or TikTok.

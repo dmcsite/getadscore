@@ -70,7 +70,7 @@ export default function TermsPage() {
             <strong>No refunds are provided for partial months or unused portions of your subscription.</strong> If you cancel your subscription, you will not receive a refund for any remaining time in your current billing period. We encourage you to make full use of the service during your subscription period.
           </p>
           <p className="text-zinc-300 mb-4">
-            In exceptional circumstances, refunds may be considered at our sole discretion. Contact us at geoff@getadscore.com for any billing concerns.
+            In exceptional circumstances, refunds may be considered at our sole discretion. Contact us at support@getadscore.com for any billing concerns.
           </p>
 
           <h3 className="text-lg font-medium text-zinc-200 mt-6 mb-3">Price Changes</h3>
@@ -161,7 +161,7 @@ export default function TermsPage() {
           </p>
           <p className="text-zinc-300 mb-4">
             DMCSITE LLC (DBA GetAdScore)<br />
-            Email: <a href="mailto:geoff@getadscore.com" className="text-indigo-400 hover:text-indigo-300">geoff@getadscore.com</a>
+            Email: <a href="mailto:support@getadscore.com" className="text-indigo-400 hover:text-indigo-300">support@getadscore.com</a>
           </p>
         </div>
       </main>
@@ -171,7 +171,7 @@ export default function TermsPage() {
           <div className="flex justify-center gap-6 text-zinc-500 text-sm">
             <a href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</a>
-            <a href="mailto:geoff@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
+            <a href="mailto:support@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
           </div>
           <div className="text-center text-zinc-700 text-xs mt-4">
             © {new Date().getFullYear()} DMCSITE LLC. All rights reserved.

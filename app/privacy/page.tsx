@@ -86,7 +86,7 @@ export default function PrivacyPage() {
 
           <h2 className="text-xl font-semibold text-zinc-100 mt-8 mb-4">Your Rights</h2>
           <p className="text-zinc-300 mb-4">
-            Depending on your location, you may have rights regarding your personal information, including the right to access, correct, or delete your data. To exercise these rights, please contact us at geoff@getadscore.com.
+            Depending on your location, you may have rights regarding your personal information, including the right to access, correct, or delete your data. To exercise these rights, please contact us at support@getadscore.com.
           </p>
 
           <h2 className="text-xl font-semibold text-zinc-100 mt-8 mb-4">Children&apos;s Privacy</h2>
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
           </p>
           <p className="text-zinc-300 mb-4">
             DMCSITE LLC (DBA GetAdScore)<br />
-            Email: <a href="mailto:geoff@getadscore.com" className="text-indigo-400 hover:text-indigo-300">geoff@getadscore.com</a>
+            Email: <a href="mailto:support@getadscore.com" className="text-indigo-400 hover:text-indigo-300">support@getadscore.com</a>
           </p>
         </div>
       </main>
@@ -115,7 +115,7 @@ export default function PrivacyPage() {
           <div className="flex justify-center gap-6 text-zinc-500 text-sm">
             <a href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-zinc-300 transition-colors">Terms of Service</a>
-            <a href="mailto:geoff@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
+            <a href="mailto:support@getadscore.com" className="hover:text-zinc-300 transition-colors">Contact</a>
           </div>
           <div className="text-center text-zinc-700 text-xs mt-4">
             © {new Date().getFullYear()} DMCSITE LLC. All rights reserved.
