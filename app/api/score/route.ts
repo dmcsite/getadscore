@@ -8,12 +8,38 @@ import { tmpdir } from "os";
 import { randomUUID } from "crypto";
 import { exec } from "child_process";
 import { promisify } from "util";
-import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
-import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 
 const execAsync = promisify(exec);
-const ffmpegPath = ffmpegInstaller.path;
-const ffprobePath = ffprobeInstaller.path;
+
+// Try to load ffmpeg installers, but don't fail if unavailable
+let ffmpegPath = "ffmpeg";
+let ffprobePath = "ffprobe";
+let ffmpegAvailable = false;
+
+async function initFfmpeg(): Promise<boolean> {
+  try {
+    // Try the installer packages first
+    const ffmpegInstaller = await import("@ffmpeg-installer/ffmpeg");
+    const ffprobeInstaller = await import("@ffprobe-installer/ffprobe");
+    ffmpegPath = ffmpegInstaller.default.path;
+    ffprobePath = ffprobeInstaller.default.path;
+    ffmpegAvailable = true;
+    return true;
+  } catch {
+    // Fall back to system ffmpeg
+    try {
+      await execAsync("which ffmpeg && which ffprobe");
+      ffmpegAvailable = true;
+      return true;
+    } catch {
+      console.log("ffmpeg not available - video processing disabled");
+      return false;
+    }
+  }
+}
+
+// Initialize on module load
+const ffmpegReady = initFfmpeg();
 
 interface AdCopy {
   primaryText?: string;
@@ -704,6 +730,18 @@ export async function POST(request: NextRequest) {
     let imageBase64: string | null = null;
 
     if (isVideo) {
+      // Wait for ffmpeg initialization and check availability
+      await ffmpegReady;
+      if (!ffmpegAvailable) {
+        return NextResponse.json(
+          {
+            error:
+              "Video processing is temporarily unavailable. Please upload an image instead, or try again later.",
+          },
+          { status: 400 }
+        );
+      }
+
       const fileExt =
         file.type === "video/mp4"
           ? ".mp4"
