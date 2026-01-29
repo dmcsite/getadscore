@@ -1603,7 +1603,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-amber-200 text-sm">
-                    You&apos;ve used your free report. <span className="text-amber-100 font-medium">Subscribe for unlimited access.</span>
+                    Subscribe to unlock full analysis, detailed fixes, and PDF exports.
                   </p>
                 </div>
                 <a
