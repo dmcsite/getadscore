@@ -47,7 +47,7 @@ interface CopyAnalysis {
   headlineScore: number;
   headlineAnalysis: string;
   copyCreativeAlignment: number;
-  copyCreativeAnalysisReason: string;
+  copyCreativeAlignmentReason: string;
   copyFixes: string[];
   primaryTextProvided: string;
   headlineProvided: string;
@@ -724,275 +724,41 @@ export default function Home() {
         yPos += 6;
       };
 
-      // ========== PAGE 1: Header, Ad Preview, Score ==========
+      // ========== PAGE 1: CREATIVE DECISION SCORECARD ==========
 
-      // Header bar - dark gradient with green accent
+      // Header bar - dark with green accent
       pdf.setFillColor(brandDark[0], brandDark[1], brandDark[2]);
-      pdf.rect(0, 0, pageWidth, 22, 'F');
-      // Green accent line at bottom of header
+      pdf.rect(0, 0, pageWidth, 18, 'F');
       pdf.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
-      pdf.rect(0, 22, pageWidth, 1.5, 'F');
+      pdf.rect(0, 18, pageWidth, 1, 'F');
 
-      // Logo in header (white on dark)
+      // Logo
       pdf.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
-      pdf.roundedRect(margin, 6, 10, 10, 2, 2, 'F');
-      pdf.setFontSize(9);
+      pdf.roundedRect(margin, 4, 8, 8, 1.5, 1.5, 'F');
+      pdf.setFontSize(7);
       pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
-      pdf.text("G", margin + 3.5, yPos + 12.5);
+      pdf.text("G", margin + 2.8, 10);
+      pdf.setFontSize(12);
+      pdf.text("GetAdScore", margin + 10, 10);
 
-      // "GetAdScore" text
-      pdf.setFontSize(14);
-      pdf.text("GetAdScore", margin + 13, 13);
+      // Date + Brand right-aligned
       pdf.setFont('helvetica', 'normal');
-
-      // Date right-aligned in header
       pdf.setFontSize(8);
       pdf.setTextColor(161, 161, 170);
       const dateStr = new Date(result.analyzedAt || Date.now()).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        month: 'short', day: 'numeric', year: 'numeric'
       });
-      pdf.text(dateStr, pageWidth - margin - pdf.getTextWidth(dateStr), 13);
+      pdf.text(dateStr, pageWidth - margin - pdf.getTextWidth(dateStr), 10);
 
-      yPos = 30;
-
-      // ========== FACEBOOK AD MOCKUP ==========
-      const cardX = margin;
-      const cardWidth = contentWidth;
-      const cardStartY = yPos;
-      const cardHeight = 125; // Compact card
-
-      // Card shadow (multiple layers for depth)
-      pdf.setFillColor(200, 200, 200);
-      pdf.roundedRect(cardX + 2, yPos + 2, cardWidth, cardHeight, 4, 4, 'F');
-      pdf.setFillColor(220, 220, 220);
-      pdf.roundedRect(cardX + 1, yPos + 1, cardWidth, cardHeight, 4, 4, 'F');
-
-      // Card background (white)
-      pdf.setFillColor(255, 255, 255);
-      pdf.setDrawColor(200, 200, 200);
-      pdf.setLineWidth(0.5);
-      pdf.roundedRect(cardX, yPos, cardWidth, cardHeight, 4, 4, 'FD');
-
-      // --- Header row: Profile pic + Brand + Sponsored ---
-      yPos += 8;
-
-      // Profile circle - gradient effect
-      pdf.setFillColor(59, 130, 246); // Blue-500
-      pdf.circle(cardX + 12, yPos + 4, 5, 'F');
-
-      // Brand initial inside circle (centered)
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(255, 255, 255);
-      const initial = brandName.charAt(0).toUpperCase();
-      pdf.text(initial, cardX + 10.3, yPos + 6);
-      pdf.setFont('helvetica', 'normal');
-
-      // Brand name
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-      pdf.text(brandName, cardX + 20, yPos + 3);
-      pdf.setFont('helvetica', 'normal');
-
-      // "Sponsored" label
+      // Client/Brand line (optional header)
       pdf.setFontSize(7);
-      pdf.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      pdf.text("Sponsored", cardX + 20, yPos + 7);
+      pdf.text(`Brand: ${brandName}`, pageWidth - margin - pdf.getTextWidth(`Brand: ${brandName}`), 15);
 
-      // Three dots menu (right side)
-      pdf.setFillColor(textMuted[0], textMuted[1], textMuted[2]);
-      pdf.circle(cardX + cardWidth - 15, yPos + 4, 1, 'F');
-      pdf.circle(cardX + cardWidth - 11, yPos + 4, 1, 'F');
-      pdf.circle(cardX + cardWidth - 7, yPos + 4, 1, 'F');
+      yPos = 22;
 
-      yPos += 12;
-
-      // --- Primary Text (compact) ---
-      const displayPrimaryText = result.copyAnalysis?.primaryTextProvided || primaryText;
-      if (displayPrimaryText) {
-        pdf.setFontSize(8);
-        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-        const truncateAt = 80;
-        const textToShow = displayPrimaryText.length > truncateAt
-          ? displayPrimaryText.substring(0, truncateAt) + "... See more"
-          : displayPrimaryText;
-        const primaryLines = pdf.splitTextToSize(textToShow, cardWidth - 16);
-        pdf.text(primaryLines.slice(0, 2), cardX + 8, yPos);
-        yPos += primaryLines.slice(0, 2).length * 4 + 3;
-      } else {
-        yPos += 1;
-      }
-
-      // --- Creative Thumbnail (Larger, prominent) ---
-      const thumbnailData = result.extractedFrames?.[0]?.base64 || result.thumbnail;
-      const imgAreaX = cardX;
-      const imgAreaWidth = cardWidth;
-      const imgAreaHeight = 75;
-
-      // Add the thumbnail image - load async then add to PDF with proper aspect ratio
-      if (thumbnailData && thumbnailData.length > 100) {
-        try {
-          // Load image asynchronously using Promise
-          const loadImage = (): Promise<{ dataUrl: string; width: number; height: number }> => {
-            return new Promise((resolve, reject) => {
-              const img = new window.Image();
-              img.onload = () => {
-                // Create canvas to convert to PNG
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.drawImage(img, 0, 0);
-                  resolve({
-                    dataUrl: canvas.toDataURL('image/png'),
-                    width: img.width,
-                    height: img.height
-                  });
-                } else {
-                  reject(new Error('Could not get canvas context'));
-                }
-              };
-              img.onerror = () => reject(new Error('Image load failed'));
-              img.src = `data:image/jpeg;base64,${thumbnailData}`;
-            });
-          };
-
-          const { dataUrl: pngDataUrl, width: naturalWidth, height: naturalHeight } = await loadImage();
-
-          // Calculate dimensions to fit within area while maintaining aspect ratio
-          const aspectRatio = naturalWidth / naturalHeight;
-          let finalWidth = imgAreaWidth;
-          let finalHeight = imgAreaWidth / aspectRatio;
-
-          // If calculated height is too tall, fit by height instead
-          if (finalHeight > imgAreaHeight) {
-            finalHeight = imgAreaHeight;
-            finalWidth = imgAreaHeight * aspectRatio;
-          }
-
-          // Center the image horizontally within the card
-          const imgX = imgAreaX + (imgAreaWidth - finalWidth) / 2;
-
-          // Fill background for letterboxing
-          pdf.setFillColor(245, 245, 245);
-          pdf.rect(imgAreaX, yPos, imgAreaWidth, imgAreaHeight, 'F');
-
-          // Add the image centered
-          pdf.addImage(pngDataUrl, 'PNG', imgX, yPos, finalWidth, finalHeight);
-        } catch (imgError) {
-          console.error("Failed to add image to PDF:", imgError);
-          // Draw gray placeholder on error
-          pdf.setFillColor(240, 240, 240);
-          pdf.rect(imgAreaX, yPos, imgAreaWidth, imgAreaHeight, 'F');
-          pdf.setFontSize(9);
-          pdf.setTextColor(150, 150, 150);
-          pdf.text("Preview unavailable", imgAreaX + imgAreaWidth / 2 - 18, yPos + imgAreaHeight / 2);
-        }
-      } else {
-        // Draw placeholder if no thumbnail data
-        pdf.setFillColor(245, 245, 245);
-        pdf.rect(imgAreaX, yPos, imgAreaWidth, imgAreaHeight, 'F');
-        pdf.setFontSize(9);
-        pdf.setTextColor(160, 160, 160);
-        pdf.text("No preview available", imgAreaX + imgAreaWidth / 2 - 20, yPos + imgAreaHeight / 2);
-      }
-
-      // Play button overlay for videos (centered on image area)
-      if (result.mediaType === "video") {
-        const centerX = imgAreaX + imgAreaWidth / 2;
-        const centerY = yPos + imgAreaHeight / 2;
-
-        // Dark circle background
-        pdf.setFillColor(0, 0, 0);
-        pdf.circle(centerX, centerY, 10, 'F');
-
-        // White play triangle
-        pdf.setFillColor(255, 255, 255);
-        pdf.triangle(
-          centerX - 3, centerY - 5,
-          centerX - 3, centerY + 5,
-          centerX + 5, centerY,
-          'F'
-        );
-      }
-
-      yPos += imgAreaHeight;
-
-      // --- Headline + CTA Section (compact) ---
-      const displayHeadline = result.copyAnalysis?.headlineProvided || headline;
-
-      pdf.setFillColor(245, 245, 247);
-      pdf.rect(cardX, yPos, cardWidth, 14, 'F');
-
-      if (displayHeadline) {
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-        const headlineTrunc = displayHeadline.length > 45 ? displayHeadline.substring(0, 42) + "..." : displayHeadline;
-        pdf.text(headlineTrunc, cardX + 8, yPos + 9);
-        pdf.setFont('helvetica', 'normal');
-      }
-
-      // "Learn More" button
-      const btnWidth = 24;
-      const btnX = cardX + cardWidth - btnWidth - 6;
-      pdf.setFillColor(24, 119, 242);
-      pdf.roundedRect(btnX, yPos + 3, btnWidth, 8, 1.5, 1.5, 'F');
-      pdf.setFontSize(7);
-      pdf.setTextColor(255, 255, 255);
-      pdf.text("Learn More", btnX + 3, yPos + 8.5);
-      yPos += 14;
-
-      // --- Engagement Row (compact) ---
-      pdf.setDrawColor(228, 228, 231);
-      pdf.line(cardX + 6, yPos, cardX + cardWidth - 6, yPos);
-      yPos += 4;
-
-      pdf.setFontSize(8);
-      pdf.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      const engageSpacing = cardWidth / 3;
-      pdf.text("Like", cardX + engageSpacing * 0.5 - 5, yPos + 3);
-      pdf.text("Comment", cardX + engageSpacing * 1.5 - 10, yPos + 3);
-      pdf.text("Share", cardX + engageSpacing * 2.5 - 6, yPos + 3);
-
-      // Move past the card
-      yPos = cardStartY + cardHeight + 10;
-
-      // ========== SCORE & VERDICT CARD ==========
-      const scoreCardHeight = 38;
-      pdf.setFillColor(255, 255, 255);
-      pdf.setDrawColor(228, 228, 231);
-      pdf.setLineWidth(0.5);
-      pdf.roundedRect(margin, yPos, contentWidth, scoreCardHeight, 4, 4, 'FD');
-
-      // Score circle area (left)
-      const scoreCircleX = margin + 25;
-      const scoreCircleY = yPos + scoreCardHeight / 2;
-
-      // Score circle background
-      pdf.setDrawColor(228, 228, 231);
-      pdf.setLineWidth(2);
-      pdf.circle(scoreCircleX, scoreCircleY, 14, 'S');
-
-      // Score circle progress arc (colored based on score)
+      // ========== SCORE + VERDICT HEADER (Compact single line) ==========
       const scoreColor = result.overallScore >= 75 ? brandGreen : result.overallScore >= 60 ? [234, 179, 8] : [239, 68, 68];
-      pdf.setDrawColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-      pdf.setLineWidth(2.5);
-      // Draw partial arc (simplified as full circle for PDF)
-      pdf.circle(scoreCircleX, scoreCircleY, 14, 'S');
-
-      // Score number
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-      const scoreStr = `${result.overallScore}`;
-      pdf.text(scoreStr, scoreCircleX - (scoreStr.length > 1 ? 6 : 3), scoreCircleY + 5);
-      pdf.setFont('helvetica', 'normal');
-
-      // Verdict (right of score)
       const pdfVerdictStyles = getVerdictStyles(result.overallScore);
       let verdictBgColor: number[], verdictTextColor: number[];
       if (result.overallScore >= 75) {
@@ -1003,120 +769,237 @@ export default function Home() {
         verdictBgColor = [254, 226, 226]; verdictTextColor = [153, 27, 27];
       }
 
-      const verdictX = margin + 50;
+      // Score + Verdict row
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(228, 228, 231);
+      pdf.roundedRect(margin, yPos, contentWidth, 18, 3, 3, 'FD');
+
+      // Score number (left)
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
+      pdf.text(`${result.overallScore}`, margin + 6, yPos + 13);
+      pdf.setFontSize(10);
+      pdf.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+      pdf.text("/100", margin + 22, yPos + 13);
+
+      // Verdict badge (center-left)
+      const badgeX = margin + 42;
       pdf.setFillColor(verdictBgColor[0], verdictBgColor[1], verdictBgColor[2]);
-      pdf.roundedRect(verdictX, yPos + 8, 60, 12, 2, 2, 'F');
-      pdf.setFontSize(9);
+      pdf.roundedRect(badgeX, yPos + 4, 52, 10, 2, 2, 'F');
+      pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(verdictTextColor[0], verdictTextColor[1], verdictTextColor[2]);
-      pdf.text(pdfVerdictStyles.label, verdictX + 4, yPos + 16);
+      pdf.text(pdfVerdictStyles.label, badgeX + 4, yPos + 11);
       pdf.setFont('helvetica', 'normal');
 
-      // Verdict description
+      // Verdict description (right)
       pdf.setFontSize(8);
       pdf.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      pdf.text(pdfVerdictStyles.description, verdictX, yPos + 28);
+      pdf.text(pdfVerdictStyles.description, badgeX + 58, yPos + 11);
 
-      // Score explanation (far right)
+      yPos += 22;
+
+      // ========== AD PREVIEW (Compact) ==========
+      const cardX = margin;
+      const cardWidth = contentWidth * 0.55; // Left side - smaller preview
+      const infoX = margin + cardWidth + 6; // Right side - info
+      const infoWidth = contentWidth - cardWidth - 6;
+      const cardHeight = 75;
+
+      // Ad preview card (left)
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(cardX, yPos, cardWidth, cardHeight, 3, 3, 'FD');
+
+      // Thumbnail
+      const thumbnailData = result.extractedFrames?.[0]?.base64 || result.thumbnail;
+      const imgAreaHeight = cardHeight - 4;
+
+      if (thumbnailData && thumbnailData.length > 100) {
+        try {
+          const loadImage = (): Promise<{ dataUrl: string; width: number; height: number }> => {
+            return new Promise((resolve, reject) => {
+              const img = new window.Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.width, height: img.height });
+                } else reject(new Error('No context'));
+              };
+              img.onerror = () => reject(new Error('Load failed'));
+              img.src = `data:image/jpeg;base64,${thumbnailData}`;
+            });
+          };
+          const { dataUrl: pngDataUrl, width: naturalWidth, height: naturalHeight } = await loadImage();
+          const aspectRatio = naturalWidth / naturalHeight;
+          let finalWidth = cardWidth - 4;
+          let finalHeight = finalWidth / aspectRatio;
+          if (finalHeight > imgAreaHeight) {
+            finalHeight = imgAreaHeight;
+            finalWidth = imgAreaHeight * aspectRatio;
+          }
+          const imgX = cardX + 2 + (cardWidth - 4 - finalWidth) / 2;
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(cardX + 2, yPos + 2, cardWidth - 4, imgAreaHeight, 'F');
+          pdf.addImage(pngDataUrl, 'PNG', imgX, yPos + 2, finalWidth, finalHeight);
+        } catch {
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(cardX + 2, yPos + 2, cardWidth - 4, imgAreaHeight, 'F');
+        }
+      } else {
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(cardX + 2, yPos + 2, cardWidth - 4, imgAreaHeight, 'F');
+      }
+
+      // Play button for video
+      if (result.mediaType === "video") {
+        const centerX = cardX + cardWidth / 2;
+        const centerY = yPos + cardHeight / 2;
+        pdf.setFillColor(0, 0, 0);
+        pdf.circle(centerX, centerY, 8, 'F');
+        pdf.setFillColor(255, 255, 255);
+        pdf.triangle(centerX - 2, centerY - 4, centerX - 2, centerY + 4, centerX + 4, centerY, 'F');
+      }
+
+      // Info panel (right side)
+      // Quick Audit as compact checklist
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+      pdf.text("QUICK AUDIT", infoX, yPos + 6);
+      pdf.setFont('helvetica', 'normal');
+
+      let auditY = yPos + 12;
+      const auditItems = [
+        { label: "Offer", value: result.quickAudit?.offerMentioned },
+        { label: "Urgency", value: result.quickAudit?.urgencyPresent },
+        { label: "CTA", value: (result.categories.find(c => c.name === 'CTA Strength')?.score || 0) >= 7 },
+      ];
+      if (result.mediaType === 'video' && result.quickAudit?.endCardPresent !== undefined) {
+        auditItems.splice(2, 0, { label: "End Card", value: result.quickAudit.endCardPresent });
+      }
+
+      pdf.setFontSize(8);
+      auditItems.forEach((item) => {
+        if (item.value) {
+          pdf.setTextColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+          pdf.text("OK", infoX, auditY);
+        } else {
+          pdf.setTextColor(239, 68, 68);
+          pdf.text("--", infoX, auditY);
+        }
+        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+        pdf.text(item.label, infoX + 10, auditY);
+        auditY += 5;
+      });
+
+      // Score breakdown mini (right side, below audit)
+      auditY += 3;
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+      pdf.text("KEY SCORES", infoX, auditY);
+      pdf.setFont('helvetica', 'normal');
+      auditY += 5;
+
+      const keyCategories = ['Thumb-Stop Power', 'Hook Clarity', 'CTA Strength'];
+      keyCategories.forEach((catName) => {
+        const cat = result.categories.find(c => c.name === catName);
+        if (cat) {
+          const catColor = cat.score >= 7 ? brandGreen : cat.score >= 5 ? [234, 179, 8] : [239, 68, 68];
+          pdf.setTextColor(catColor[0], catColor[1], catColor[2]);
+          pdf.setFontSize(8);
+          pdf.text(`${cat.score}`, infoX, auditY);
+          pdf.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+          pdf.setFontSize(7);
+          pdf.text(catName.replace(' Power', '').replace(' Clarity', '').replace(' Strength', ''), infoX + 8, auditY);
+          auditY += 5;
+        }
+      });
+
+      yPos += cardHeight + 6;
+
+      // ========== EXECUTIVE SUMMARY (Compact horizontal) ==========
+      pdf.setFillColor(250, 250, 250);
+      pdf.setDrawColor(228, 228, 231);
+      pdf.roundedRect(margin, yPos, contentWidth, 16, 2, 2, 'FD');
+
+      const summaryY = yPos + 4;
+      const colWidth = contentWidth / 3;
+
+      // Strength
+      pdf.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+      pdf.circle(margin + 4, summaryY + 3, 1.5, 'F');
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+      pdf.text("Strength", margin + 8, summaryY + 4);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+      const strengthText = result.executiveSummary?.biggestStrength || '';
+      pdf.text(strengthText.length > 35 ? strengthText.substring(0, 32) + '...' : strengthText, margin + 4, summaryY + 10);
+
+      // Risk
+      const riskX = margin + colWidth;
+      pdf.setFillColor(239, 68, 68);
+      pdf.circle(riskX + 4, summaryY + 3, 1.5, 'F');
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(239, 68, 68);
+      pdf.text("Risk", riskX + 8, summaryY + 4);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+      const riskText = result.executiveSummary?.biggestRisk || '';
+      pdf.text(riskText.length > 35 ? riskText.substring(0, 32) + '...' : riskText, riskX + 4, summaryY + 10);
+
+      // Quick Win
+      const winX = margin + colWidth * 2;
+      pdf.setFillColor(59, 130, 246);
+      pdf.circle(winX + 4, summaryY + 3, 1.5, 'F');
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(59, 130, 246);
+      pdf.text("Quick Win", winX + 8, summaryY + 4);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+      const winText = result.executiveSummary?.quickWin || '';
+      pdf.text(winText.length > 30 ? winText.substring(0, 27) + '...' : winText, winX + 4, summaryY + 10);
+
+      yPos += 20;
+
+      // ========== BIGGEST FIX BEFORE SCALING (Callout) ==========
+      if (result.topFixes && result.topFixes.length > 0) {
+        pdf.setFillColor(254, 243, 199); // Amber-100
+        pdf.setDrawColor(251, 191, 36); // Amber-400
+        pdf.roundedRect(margin, yPos, contentWidth, 14, 2, 2, 'FD');
+
+        pdf.setFontSize(7);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(180, 83, 9); // Amber-700
+        pdf.text("FIX BEFORE SCALING:", margin + 4, yPos + 9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
+        const fixText = result.topFixes[0];
+        pdf.text(fixText.length > 80 ? fixText.substring(0, 77) + '...' : fixText, margin + 42, yPos + 9);
+
+        yPos += 18;
+      }
+
+      // ========== SCORE DRIVER/DRAG (Compact line) ==========
       if (result.scoreExplanation) {
         pdf.setFontSize(7);
         pdf.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-        const explainX = margin + 120;
-        pdf.text(`Driven by: ${result.scoreExplanation.scoreDriver}`, explainX, yPos + 14);
-        pdf.text(`Held back by: ${result.scoreExplanation.scoreDrag}`, explainX, yPos + 20);
-      }
-
-      yPos += scoreCardHeight + 8;
-
-      // ========== EXECUTIVE SUMMARY ==========
-      if (result.executiveSummary) {
-        pdf.setFillColor(250, 250, 250);
-        pdf.setDrawColor(228, 228, 231);
-        pdf.roundedRect(margin, yPos, contentWidth, 22, 3, 3, 'FD');
-
-        const summaryY = yPos + 5;
-        const colWidth = contentWidth / 3;
-
-        // Strength (green)
-        pdf.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
-        pdf.circle(margin + 5, summaryY + 2, 1.5, 'F');
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(brandGreen[0], brandGreen[1], brandGreen[2]);
-        pdf.text("Strength", margin + 9, summaryY + 3);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(7);
-        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-        const strengthLines = pdf.splitTextToSize(result.executiveSummary.biggestStrength, colWidth - 15);
-        pdf.text(strengthLines[0], margin + 5, summaryY + 9);
-        if (strengthLines[1]) pdf.text(strengthLines[1], margin + 5, summaryY + 13);
-
-        // Risk (red)
-        const riskX = margin + colWidth;
-        pdf.setFillColor(239, 68, 68);
-        pdf.circle(riskX + 5, summaryY + 2, 1.5, 'F');
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(239, 68, 68);
-        pdf.text("Risk", riskX + 9, summaryY + 3);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-        const riskLines = pdf.splitTextToSize(result.executiveSummary.biggestRisk, colWidth - 15);
-        pdf.text(riskLines[0], riskX + 5, summaryY + 9);
-        if (riskLines[1]) pdf.text(riskLines[1], riskX + 5, summaryY + 13);
-
-        // Quick Win (blue)
-        const winX = margin + colWidth * 2;
-        pdf.setFillColor(59, 130, 246);
-        pdf.circle(winX + 5, summaryY + 2, 1.5, 'F');
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(59, 130, 246);
-        pdf.text("Quick Win", winX + 9, summaryY + 3);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-        const winLines = pdf.splitTextToSize(result.executiveSummary.quickWin, colWidth - 10);
-        pdf.text(winLines[0], winX + 5, summaryY + 9);
-        if (winLines[1]) pdf.text(winLines[1], winX + 5, summaryY + 13);
-
-        yPos += 26;
-      }
-
-      // ========== QUICK AUDIT ROW ==========
-      if (result.quickAudit) {
-        pdf.setFillColor(255, 255, 255);
-        pdf.setDrawColor(228, 228, 231);
-        pdf.roundedRect(margin, yPos, contentWidth, 14, 3, 3, 'FD');
-
-        const auditY = yPos + 9;
-        const auditItems = [
-          { label: "Offer", value: result.quickAudit.offerMentioned },
-          { label: "Urgency", value: result.quickAudit.urgencyPresent },
-        ];
-        if (result.mediaType === 'video' && result.quickAudit.endCardPresent !== undefined) {
-          auditItems.push({ label: "End Card", value: result.quickAudit.endCardPresent });
-        }
-        // Add CTA based on category score
-        const ctaCategory = result.categories.find(c => c.name === 'CTA Strength');
-        const ctaScore = ctaCategory?.score || 0;
-        auditItems.push({ label: "CTA", value: ctaScore >= 7 });
-
-        const auditSpacing = contentWidth / auditItems.length;
-        auditItems.forEach((item, i) => {
-          const itemX = margin + auditSpacing * i + auditSpacing / 2;
-          pdf.setFontSize(8);
-          if (item.value) {
-            pdf.setTextColor(brandGreen[0], brandGreen[1], brandGreen[2]);
-            pdf.text("[OK]", itemX - 18, auditY);
-          } else {
-            pdf.setTextColor(239, 68, 68);
-            pdf.text("[X]", itemX - 16, auditY);
-          }
-          pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-          pdf.text(item.label, itemX - 8, auditY);
-        });
-
-        yPos += 18;
+        const explainText = `Score driven by ${result.scoreExplanation.scoreDriver} | Held back by ${result.scoreExplanation.scoreDrag}`;
+        const explainWidth = pdf.getTextWidth(explainText);
+        pdf.text(explainText, margin + (contentWidth - explainWidth) / 2, yPos + 4);
+        yPos += 10;
       }
 
       // ========== NEW PAGE FOR DETAILED ANALYSIS ==========
