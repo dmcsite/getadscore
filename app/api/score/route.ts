@@ -8,8 +8,12 @@ import { tmpdir } from "os";
 import { randomUUID } from "crypto";
 import { exec } from "child_process";
 import { promisify } from "util";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 
 const execAsync = promisify(exec);
+const ffmpegPath = ffmpegInstaller.path;
+const ffprobePath = ffprobeInstaller.path;
 
 interface AdCopy {
   primaryText?: string;
@@ -399,7 +403,7 @@ async function extractAudioAndTranscribe(
   try {
     // Extract audio from video (first 15 seconds is enough for analysis)
     await execAsync(
-      `ffmpeg -i "${videoPath}" -t 15 -vn -acodec libmp3lame -q:a 4 "${audioPath}" -y 2>/dev/null`
+      `"${ffmpegPath}" -i "${videoPath}" -t 15 -vn -acodec libmp3lame -q:a 4 "${audioPath}" -y 2>/dev/null`
     );
 
     // Check if audio file was created and has content
@@ -578,7 +582,7 @@ async function extractVideoFrames(
 
     // Get video duration first
     const { stdout: durationOutput } = await execAsync(
-      `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`
+      `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`
     );
     const duration = parseFloat(durationOutput.trim()) || 30;
 
@@ -603,7 +607,7 @@ async function extractVideoFrames(
       const framePath = join(tempDir, `frame_${timestamp}.jpg`);
       try {
         await execAsync(
-          `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" -y 2>/dev/null`
+          `"${ffmpegPath}" -ss ${timestamp} -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" -y 2>/dev/null`
         );
         const frameBuffer = await readFile(framePath);
         const base64 = frameBuffer.toString("base64");
