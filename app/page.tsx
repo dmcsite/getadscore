@@ -140,41 +140,14 @@ export default function Home() {
   // Computed: should show full results?
   const hasFullAccess = isPaid || !freeReportUsed;
 
-  // Locked section wrapper component
-  const LockedSection = ({ children, sectionName }: { children: React.ReactNode; sectionName: string }) => {
+  // Locked section wrapper component - just blurs content, no overlay card
+  const LockedSection = ({ children }: { children: React.ReactNode }) => {
     if (hasFullAccess) {
       return <>{children}</>;
     }
     return (
-      <div className="relative">
-        <div className="blur-sm pointer-events-none select-none">
-          {children}
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/60 backdrop-blur-[2px] rounded-xl">
-          <div className="text-center p-6 max-w-sm">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-              <svg className="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h3 className="text-zinc-100 font-semibold mb-2">Unlock Full Analysis</h3>
-            <p className="text-zinc-400 text-sm mb-4">Get detailed scoring, actionable fixes, and PDF exports</p>
-            <div className="flex flex-col gap-2">
-              <a
-                href="https://buy.stripe.com/dRm14naE29pbcLbfJg6Zy00"
-                className="block w-full py-2 px-4 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-sm font-medium transition-colors"
-              >
-                Individual — $49/mo
-              </a>
-              <a
-                href="https://buy.stripe.com/dRmdR96nM6cZ12t0Om6Zy01"
-                className="block w-full py-2 px-4 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-medium transition-colors"
-              >
-                Agency — $149/mo
-              </a>
-            </div>
-          </div>
-        </div>
+      <div className="blur-sm pointer-events-none select-none opacity-50">
+        {children}
       </div>
     );
   };
@@ -1937,10 +1910,39 @@ export default function Home() {
               </div>
 
               {/* Right Column - Details */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-6 relative">
+                {/* Single Unlock Overlay - appears once over all blurred content */}
+                {!hasFullAccess && (
+                  <div className="absolute inset-0 z-10 flex items-start justify-center pt-32 pointer-events-none">
+                    <div className="bg-zinc-900/95 border border-zinc-700 rounded-2xl p-8 max-w-sm text-center shadow-2xl pointer-events-auto">
+                      <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                        <svg className="w-7 h-7 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-semibold text-zinc-100 mb-2">Unlock Full Analysis</h3>
+                      <p className="text-zinc-400 text-sm mb-6">Get detailed scoring, actionable fixes, and PDF exports</p>
+                      <div className="space-y-3">
+                        <a
+                          href="https://buy.stripe.com/dRm14naE29pbcLbfJg6Zy00"
+                          className="block w-full py-3 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-medium transition-colors"
+                        >
+                          Individual — $49/mo
+                        </a>
+                        <a
+                          href="https://buy.stripe.com/dRmdR96nM6cZ12t0Om6Zy01"
+                          className="block w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-colors"
+                        >
+                          Agency — $149/mo
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Hook Analysis (Video Only) */}
                 {result.hookAnalysis && (
-                  <LockedSection sectionName="hookAnalysis">
+                  <LockedSection>
                   <div className="rounded-xl bg-purple-500/5 border border-purple-500/20 overflow-hidden">
                     <button
                       onClick={() => toggleSection('hookAnalysis')}
@@ -1993,7 +1995,7 @@ export default function Home() {
                 )}
 
                 {/* Category Breakdown */}
-                <LockedSection sectionName="scoreBreakdown">
+                <LockedSection>
                 <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
                   <button
                     onClick={() => toggleSection('scoreBreakdown')}
@@ -2039,7 +2041,7 @@ export default function Home() {
 
                 {/* Ad Copy Analysis */}
                 {result.copyAnalysis && (
-                  <LockedSection sectionName="copyAnalysis">
+                  <LockedSection>
                   <div className="rounded-xl bg-teal-500/5 border border-teal-500/20 overflow-hidden">
                     <button
                       onClick={() => toggleSection('copyAnalysis')}
@@ -2139,7 +2141,7 @@ export default function Home() {
 
                 {/* Audio Analysis (Video Only) */}
                 {result.audioAnalysis && (
-                  <LockedSection sectionName="audioAnalysis">
+                  <LockedSection>
                   <div className="rounded-xl bg-amber-500/5 border border-amber-500/20 overflow-hidden">
                     <button
                       onClick={() => toggleSection('audioAnalysis')}
@@ -2238,7 +2240,7 @@ export default function Home() {
 
                 {/* Video Notes (Video Only) */}
                 {result.videoNotes && (
-                  <LockedSection sectionName="videoNotes">
+                  <LockedSection>
                   <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
                     <button
                       onClick={() => toggleSection('videoNotes')}
@@ -2306,7 +2308,7 @@ export default function Home() {
                 )}
 
                 {/* Top 3 Fixes */}
-                <LockedSection sectionName="topFixes">
+                <LockedSection>
                 <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
                   <button
                     onClick={() => toggleSection('topFixes')}
@@ -2362,7 +2364,7 @@ export default function Home() {
                 )}
 
                 {/* What's Working */}
-                <LockedSection sectionName="whatsWorking">
+                <LockedSection>
                 <div className="rounded-xl bg-green-500/5 border border-green-500/20 overflow-hidden">
                   <button
                     onClick={() => toggleSection('whatsWorking')}
@@ -2469,7 +2471,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Pricing Section */}
+      {/* Pricing Section - hidden when showing gated results (unlock overlay is the CTA) */}
+      {(hasFullAccess || !result) && (
       <section id="pricing" className="border-t border-zinc-800 mt-20 py-20 bg-zinc-900/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -2584,6 +2587,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-zinc-800">
