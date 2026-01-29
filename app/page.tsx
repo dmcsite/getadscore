@@ -1281,14 +1281,22 @@ export default function Home() {
             </div>
             <span className="font-semibold text-lg text-zinc-100">GetAdScore</span>
           </div>
-          {result && (
-            <button
-              onClick={reset}
+          <div className="flex items-center gap-6">
+            <a
+              href="#pricing"
               className="text-sm text-zinc-500 hover:text-zinc-100 transition-colors"
             >
-              Score another ad
-            </button>
-          )}
+              Pricing
+            </a>
+            {result && (
+              <button
+                onClick={reset}
+                className="text-sm text-zinc-500 hover:text-zinc-100 transition-colors"
+              >
+                Score another ad
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -2297,8 +2305,124 @@ export default function Home() {
         </div>
       )}
 
+      {/* Pricing Section */}
+      <section id="pricing" className="border-t border-zinc-800 mt-20 py-20 bg-zinc-900/30">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-zinc-100 mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-zinc-500 text-lg max-w-2xl mx-auto">
+              Stop wasting ad spend on untested creative. Get instant AI feedback before you launch.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Individual Plan */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-zinc-100 mb-2">Individual</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-zinc-100">$49</span>
+                  <span className="text-zinc-500">/month</span>
+                </div>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-grow">
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Unlimited ad scoring</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Video + image analysis</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Copy analysis</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Platform previews (Facebook, Instagram, TikTok)</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>PDF export</span>
+                </li>
+              </ul>
+
+              <a
+                href="https://buy.stripe.com/dRm14naE29pbcLbfJg6Zy00"
+                className="block w-full py-3 px-6 text-center rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-medium transition-colors"
+              >
+                Get Started
+              </a>
+            </div>
+
+            {/* Agency Plan */}
+            <div className="rounded-2xl border-2 border-indigo-500/50 bg-zinc-900/50 p-8 flex flex-col relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-indigo-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  POPULAR
+                </span>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-zinc-100 mb-2">Agency</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-zinc-100">$149</span>
+                  <span className="text-zinc-500">/month</span>
+                </div>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-grow">
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Everything in Individual</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Priority support</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Team-friendly PDF reports</span>
+                </li>
+              </ul>
+
+              <a
+                href="https://buy.stripe.com/dRdR96nM6cZ12t0Om6Zy01"
+                className="block w-full py-3 px-6 text-center rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-all"
+              >
+                Get Started
+              </a>
+            </div>
+          </div>
+
+          <p className="text-center text-zinc-600 text-sm mt-8">
+            Cancel anytime. No contracts, no hassle.
+          </p>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t border-zinc-800 mt-20">
+      <footer className="border-t border-zinc-800">
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="text-center text-zinc-600 text-sm">
             Built for media buyers who hate wasting money on bad creative.
