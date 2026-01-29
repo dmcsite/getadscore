@@ -1607,7 +1607,7 @@ export default function Home() {
                   </p>
                 </div>
                 <a
-                  href="#pricing"
+                  href="#unlock"
                   className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium transition-colors flex-shrink-0"
                 >
                   View Plans
@@ -1913,7 +1913,7 @@ export default function Home() {
               <div className="lg:col-span-2 space-y-6 relative">
                 {/* Single Unlock Overlay - appears once over all blurred content */}
                 {!hasFullAccess && (
-                  <div className="absolute inset-0 z-10 flex items-start justify-center pt-32 pointer-events-none">
+                  <div id="unlock" className="absolute inset-0 z-10 flex items-start justify-center pt-32 pointer-events-none">
                     <div className="bg-zinc-900/95 border border-zinc-700 rounded-2xl p-8 max-w-sm text-center shadow-2xl pointer-events-auto">
                       <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
                         <svg className="w-7 h-7 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
