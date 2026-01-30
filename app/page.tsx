@@ -107,7 +107,7 @@ export default function Home() {
   const [headline, setHeadline] = useState("");
   const [description, setDescription] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [brandName, setBrandName] = useState("Your Brand");
+  const [brandName, setBrandName] = useState("");
   const [showFullText, setShowFullText] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<"facebook" | "instagram" | "tiktok">("facebook");
 
@@ -396,7 +396,7 @@ export default function Home() {
         <div className="p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm">
-              {brandName.charAt(0).toUpperCase()}
+              {(brandName || "B").charAt(0).toUpperCase()}
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-900">{brandName}</p>
@@ -519,7 +519,7 @@ export default function Home() {
             <div className="w-9 h-9 rounded-full p-0.5" style={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
               <div className="w-full h-full rounded-full bg-white p-0.5">
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-xs">
-                  {brandName.charAt(0).toUpperCase()}
+                  {(brandName || "B").charAt(0).toUpperCase()}
                 </div>
               </div>
             </div>
@@ -649,7 +649,7 @@ export default function Home() {
           {/* Profile */}
           <div className="relative">
             <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 border-2 border-white flex items-center justify-center text-white font-bold text-sm">
-              {brandName.charAt(0).toUpperCase()}
+              {(brandName || "B").charAt(0).toUpperCase()}
             </div>
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#FE2C55] flex items-center justify-center">
               <span className="text-white text-xs font-bold">+</span>
@@ -786,10 +786,12 @@ export default function Home() {
       pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
       pdf.text("G", margin + 2.8, 10);
-      pdf.setFontSize(12);
-      pdf.text("GetAdScore", margin + 10, 10);
 
-      // Date + Brand right-aligned
+      // Title: "[Brand Name] Ad Creative Analysis"
+      pdf.setFontSize(11);
+      pdf.text(`${brandName} Ad Creative Analysis`, margin + 10, 10);
+
+      // Date right-aligned
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
       pdf.setTextColor(161, 161, 170);
@@ -798,9 +800,10 @@ export default function Home() {
       });
       pdf.text(dateStr, pageWidth - margin - pdf.getTextWidth(dateStr), 10);
 
-      // Client/Brand line (optional header)
+      // "Prepared for [Brand Name]" subtitle
       pdf.setFontSize(7);
-      pdf.text(`Brand: ${brandName}`, pageWidth - margin - pdf.getTextWidth(`Brand: ${brandName}`), 15);
+      const preparedText = `Prepared for ${brandName}`;
+      pdf.text(preparedText, pageWidth - margin - pdf.getTextWidth(preparedText), 15);
 
       yPos = 22;
 
@@ -1309,7 +1312,9 @@ export default function Home() {
       }
 
       // Save PDF
-      pdf.save(`getadscore-report-${Date.now()}.pdf`);
+      // Generate filename: [brand-name]-ad-analysis.pdf (lowercase, hyphenated)
+      const safeFilename = brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      pdf.save(`${safeFilename}-ad-analysis.pdf`);
     } catch (err) {
       console.error("Error generating PDF:", err);
     } finally {
@@ -1495,13 +1500,14 @@ export default function Home() {
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Brand / Page Name
-                    <span className="text-zinc-600 font-normal ml-2">(for preview)</span>
+                    <span className="text-red-400 ml-1">*</span>
                   </label>
                   <input
                     type="text"
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
-                    placeholder="Your Brand"
+                    placeholder="Enter your brand name"
+                    required
                     className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                   />
                 </div>
@@ -1568,7 +1574,7 @@ export default function Home() {
                 {/* Submit Button */}
                 <button
                   onClick={submitAnalysis}
-                  disabled={isLoading}
+                  disabled={isLoading || !brandName.trim()}
                   className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
