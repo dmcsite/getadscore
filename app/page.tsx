@@ -978,56 +978,79 @@ export default function Home() {
       // ========== EXECUTIVE SUMMARY (Compact horizontal) ==========
       pdf.setFillColor(250, 250, 250);
       pdf.setDrawColor(228, 228, 231);
-      pdf.roundedRect(margin, yPos, contentWidth, 16, 2, 2, 'FD');
+      const colWidth = (contentWidth - 8) / 3;
+      const textColWidth = colWidth - 8; // Leave padding
+
+      // Get text and wrap it
+      const strengthText = result.executiveSummary?.biggestStrength || '';
+      const riskText = result.executiveSummary?.biggestRisk || '';
+      const winText = result.executiveSummary?.quickWin || '';
+
+      pdf.setFontSize(7);
+      const strengthLines = pdf.splitTextToSize(strengthText, textColWidth);
+      const riskLines = pdf.splitTextToSize(riskText, textColWidth);
+      const winLines = pdf.splitTextToSize(winText, textColWidth);
+
+      // Calculate box height based on max lines (min 2 lines worth of space)
+      const maxLines = Math.max(strengthLines.length, riskLines.length, winLines.length, 2);
+      const lineHeight = 3.5;
+      const boxHeight = 12 + (maxLines * lineHeight);
+
+      pdf.roundedRect(margin, yPos, contentWidth, boxHeight, 2, 2, 'FD');
 
       const summaryY = yPos + 4;
-      const colWidth = contentWidth / 3;
 
       // Strength
       pdf.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
       pdf.circle(margin + 4, summaryY + 3, 1.5, 'F');
-      pdf.setFontSize(7);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(brandGreen[0], brandGreen[1], brandGreen[2]);
       pdf.text("Strength", margin + 8, summaryY + 4);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-      const strengthText = result.executiveSummary?.biggestStrength || '';
-      pdf.text(strengthText.length > 35 ? strengthText.substring(0, 32) + '...' : strengthText, margin + 4, summaryY + 10);
+      strengthLines.forEach((line: string, i: number) => {
+        pdf.text(line, margin + 4, summaryY + 10 + (i * lineHeight));
+      });
 
       // Risk
-      const riskX = margin + colWidth;
+      const riskX = margin + colWidth + 4;
       pdf.setFillColor(239, 68, 68);
       pdf.circle(riskX + 4, summaryY + 3, 1.5, 'F');
-      pdf.setFontSize(7);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(239, 68, 68);
       pdf.text("Risk", riskX + 8, summaryY + 4);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-      const riskText = result.executiveSummary?.biggestRisk || '';
-      pdf.text(riskText.length > 35 ? riskText.substring(0, 32) + '...' : riskText, riskX + 4, summaryY + 10);
+      riskLines.forEach((line: string, i: number) => {
+        pdf.text(line, riskX + 4, summaryY + 10 + (i * lineHeight));
+      });
 
       // Quick Win
-      const winX = margin + colWidth * 2;
+      const winX = margin + (colWidth * 2) + 8;
       pdf.setFillColor(59, 130, 246);
       pdf.circle(winX + 4, summaryY + 3, 1.5, 'F');
-      pdf.setFontSize(7);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(59, 130, 246);
       pdf.text("Quick Win", winX + 8, summaryY + 4);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-      const winText = result.executiveSummary?.quickWin || '';
-      pdf.text(winText.length > 30 ? winText.substring(0, 27) + '...' : winText, winX + 4, summaryY + 10);
+      winLines.forEach((line: string, i: number) => {
+        pdf.text(line, winX + 4, summaryY + 10 + (i * lineHeight));
+      });
 
-      yPos += 20;
+      yPos += boxHeight + 4;
 
       // ========== BIGGEST FIX BEFORE SCALING (Callout) ==========
       if (result.topFixes && result.topFixes.length > 0) {
+        const fixText = result.topFixes[0];
+        pdf.setFontSize(8);
+        const fixTextWidth = contentWidth - 46; // Leave room for label
+        const fixLines = pdf.splitTextToSize(fixText, fixTextWidth);
+        const fixBoxHeight = Math.max(14, 8 + (fixLines.length * 4));
+
         pdf.setFillColor(254, 243, 199); // Amber-100
         pdf.setDrawColor(251, 191, 36); // Amber-400
-        pdf.roundedRect(margin, yPos, contentWidth, 14, 2, 2, 'FD');
+        pdf.roundedRect(margin, yPos, contentWidth, fixBoxHeight, 2, 2, 'FD');
 
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
@@ -1036,10 +1059,11 @@ export default function Home() {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
         pdf.setTextColor(textDark[0], textDark[1], textDark[2]);
-        const fixText = result.topFixes[0];
-        pdf.text(fixText.length > 80 ? fixText.substring(0, 77) + '...' : fixText, margin + 42, yPos + 9);
+        fixLines.forEach((line: string, i: number) => {
+          pdf.text(line, margin + 42, yPos + 9 + (i * 4));
+        });
 
-        yPos += 18;
+        yPos += fixBoxHeight + 4;
       }
 
       // ========== SCORE DRIVER/DRAG (Compact line) ==========
