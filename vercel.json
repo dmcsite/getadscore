@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path((?!api/).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "getadscore.com"
+        }
+      ],
+      "destination": "https://www.getadscore.com/:path*",
+      "permanent": true
+    }
+  ]
+}
