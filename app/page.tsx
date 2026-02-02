@@ -1416,13 +1416,34 @@ export default function Home() {
             </div>
 
             {/* Try Free Message */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-6">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Try it free — no signup required for your first analysis
               </span>
+            </div>
+
+            {/* CTA Buttons Above Upload */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+              <label className="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold cursor-pointer transition-all">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
+                  onChange={handleFileInput}
+                  className="hidden"
+                />
+                Upload Your Ad Free
+              </label>
+              <a
+                href="/api/sample-report"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-8 py-3 rounded-xl border-2 border-zinc-600 hover:border-zinc-500 text-zinc-300 hover:text-zinc-100 font-semibold transition-all"
+              >
+                View Sample Report
+              </a>
             </div>
 
             {/* Upload Zone */}
@@ -1471,6 +1492,14 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Privacy Reassurance */}
+            <p className="mt-4 text-center text-zinc-600 text-sm flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Your creatives are not stored or shared
+            </p>
 
             {error && (
               <div className="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
@@ -1525,17 +1554,17 @@ export default function Home() {
                 },
                 {
                   title: "Video Hook Analysis",
-                  description: "Deep dive into the critical first 3 seconds",
+                  description: "The first 1.5 seconds that make or break your ad",
                   icon: "🎬",
                 },
                 {
                   title: "Policy Flag Detection",
-                  description: "Catch Meta policy violations before they catch you",
+                  description: "Avoid disapprovals + account risk before launch",
                   icon: "🚩",
                 },
                 {
                   title: "Actionable Fixes",
-                  description: "Specific recommendations, not generic advice",
+                  description: "Copy, creative, and CTA edits you can apply today",
                   icon: "🔧",
                 },
               ].map((feature, i) => (
