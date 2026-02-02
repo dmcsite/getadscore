@@ -1442,16 +1442,14 @@ export default function Home() {
                 Score another ad
               </button>
             )}
-            {isLoaded && (
-              isSignedIn ? (
-                <UserButton afterSignOutUrl="/" />
-              ) : (
-                <SignInButton mode="modal">
-                  <button className="text-sm text-zinc-500 hover:text-zinc-100 transition-colors">
-                    Sign In
-                  </button>
-                </SignInButton>
-              )
+            {isSignedIn ? (
+              <UserButton afterSignOutUrl="/" />
+            ) : (
+              <SignInButton mode="modal">
+                <button className="text-sm text-zinc-500 hover:text-zinc-100 transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
             )}
           </div>
         </div>
