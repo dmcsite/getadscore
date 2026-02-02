@@ -1398,19 +1398,19 @@ export default function Home() {
                   <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Instant creative score in 60 seconds
+                  See why your ad will or won&apos;t convert
                 </span>
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Catch policy violations before Meta does
+                  Get specific fixes, not generic advice
                 </span>
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Know what to fix before spending a dollar
+                  Stop wasting budget on bad creative
                 </span>
               </div>
             </div>
