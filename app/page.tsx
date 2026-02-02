@@ -1515,9 +1515,12 @@ export default function Home() {
                               const data = await res.json();
                               if (data.url) {
                                 window.open(data.url, "_blank");
+                              } else if (data.error) {
+                                alert(data.error);
                               }
                             } catch (err) {
                               console.error("Failed to open billing portal:", err);
+                              alert("Failed to open billing portal. Please try again.");
                             }
                           }}
                           className="inline-block px-4 py-2 border border-zinc-300 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors cursor-pointer"

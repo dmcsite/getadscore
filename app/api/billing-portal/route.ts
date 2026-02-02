@@ -26,8 +26,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the Stripe customer ID for this email
-    const customerId = await getStripeCustomerId(email);
+    const stripe = getStripe();
+
+    // First try to get stored customer ID
+    let customerId = await getStripeCustomerId(email);
+
+    // If not stored, look up customer by email in Stripe
+    if (!customerId) {
+      const customers = await stripe.customers.list({
+        email: email.toLowerCase(),
+        limit: 1,
+      });
+
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      }
+    }
 
     if (!customerId) {
       return NextResponse.json(
@@ -35,8 +49,6 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    const stripe = getStripe();
 
     // Create a billing portal session
     const portalSession = await stripe.billingPortal.sessions.create({
