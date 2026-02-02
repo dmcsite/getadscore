@@ -1665,7 +1665,7 @@ export default function Home() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Your creatives are not stored or shared
+              Your creatives are not shared with third parties
             </p>
 
             {error && (
@@ -3152,7 +3152,7 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <p className="mt-3 text-zinc-400 text-sm">Your creatives are processed for analysis only and are not stored permanently. We do not use your ads for training or share them with third parties.</p>
+              <p className="mt-3 text-zinc-400 text-sm">Your creatives are processed for analysis only and are not shared with third parties. We do not use your ads for training.</p>
             </details>
             <details className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
               <summary className="flex items-center justify-between cursor-pointer text-zinc-100 font-medium">
