@@ -298,7 +298,11 @@ export default function Home() {
             overallScore: data.overallScore,
             verdict: data.verdict,
             reportData: {
-              summary: data.summary,
+              summary: {
+                strength: data.executiveSummary?.biggestStrength || "",
+                risk: data.executiveSummary?.biggestRisk || "",
+                quick_win: data.executiveSummary?.quickWin || "",
+              },
               scores: data.categories.reduce((acc: Record<string, { score: number; reason: string }>, cat: { name: string; score: number; reason: string }) => {
                 const key = cat.name.toLowerCase().replace(/[^a-z]+/g, '_');
                 acc[key] = { score: cat.score, reason: cat.reason };
