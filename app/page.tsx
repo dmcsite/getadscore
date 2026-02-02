@@ -1610,6 +1610,7 @@ export default function Home() {
 
                 {/* CTA Button */}
                 <div className="text-center">
+                  <p className="text-zinc-300 text-sm mb-4">This is what you receive after every score.</p>
                   <a
                     href="/api/sample-report"
                     target="_blank"
@@ -1624,7 +1625,12 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
-                  <p className="mt-3 text-zinc-500 text-sm">Opens PDF in new tab</p>
+                  <p className="mt-3 text-zinc-500 text-sm flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Includes PDF export + platform previews
+                  </p>
                 </div>
               </div>
             </div>
@@ -2686,9 +2692,33 @@ export default function Home() {
         </div>
       )}
 
+      {/* CTA Section Above Pricing */}
+      {(hasFullAccess || !result) && (
+      <section className="mt-20 py-16">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-zinc-100 mb-4">Ready to score your first ad?</h2>
+          <p className="text-zinc-500 mb-8">First score is free, no signup required.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all"
+            >
+              Upload Ad Free
+            </button>
+            <a
+              href="#pricing"
+              className="px-8 py-3 rounded-xl border-2 border-zinc-600 hover:border-zinc-500 text-zinc-300 hover:text-zinc-100 font-semibold transition-all"
+            >
+              View Plans
+            </a>
+          </div>
+        </div>
+      </section>
+      )}
+
       {/* Pricing Section - hidden when showing gated results (unlock overlay is the CTA) */}
       {(hasFullAccess || !result) && (
-      <section id="pricing" className="border-t border-zinc-800 mt-20 py-20 bg-zinc-900/30">
+      <section id="pricing" className="border-t border-zinc-800 py-20 bg-zinc-900/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-zinc-100 mb-4">
@@ -2745,7 +2775,7 @@ export default function Home() {
 
               <a
                 href="https://buy.stripe.com/dRm14naE29pbcLbfJg6Zy00"
-                className="block w-full py-3 px-6 text-center rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-medium transition-colors"
+                className="block w-full py-3 px-6 text-center rounded-xl border-2 border-zinc-600 hover:border-zinc-500 bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-100 font-medium transition-all"
               >
                 Get Started
               </a>
@@ -2800,6 +2830,96 @@ export default function Home() {
           <p className="text-center text-zinc-600 text-sm mt-8">
             Cancel anytime. No contracts, no hassle.
           </p>
+        </div>
+      </section>
+      )}
+
+      {/* Testimonials Section */}
+      {(hasFullAccess || !result) && (
+      <section className="py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">What Users Say</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <p className="text-zinc-300 mb-4">&ldquo;Caught a policy issue before launch that would have gotten my account flagged. Paid for itself immediately.&rdquo;</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">M</div>
+                <div>
+                  <div className="text-zinc-100 font-medium">Marcus T.</div>
+                  <div className="text-zinc-500 text-sm">Shopify Founder</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <p className="text-zinc-300 mb-4">&ldquo;Helped us pick the best creative faster. We used to debate for hours — now we just check the score.&rdquo;</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">S</div>
+                <div>
+                  <div className="text-zinc-100 font-medium">Sarah K.</div>
+                  <div className="text-zinc-500 text-sm">Media Buyer</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-zinc-600 text-sm mt-6">
+            Built from analyzing 10,000+ ad creatives
+          </p>
+        </div>
+      </section>
+      )}
+
+      {/* FAQ Section */}
+      {(hasFullAccess || !result) && (
+      <section className="border-t border-zinc-800 py-16">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            <details className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <summary className="flex items-center justify-between cursor-pointer text-zinc-100 font-medium">
+                What ad formats does GetAdScore support?
+                <svg className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-zinc-400 text-sm">We support images (JPG, PNG, WebP, GIF up to 20MB) and videos (MP4, MOV, WebM up to 50MB). Both static ads and video ads are fully analyzed.</p>
+            </details>
+            <details className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <summary className="flex items-center justify-between cursor-pointer text-zinc-100 font-medium">
+                Is this just ChatGPT with a different UI?
+                <svg className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-zinc-400 text-sm">No. GetAdScore uses custom-built analysis frameworks based on 20 years of media buying experience. Our scoring criteria, category weights, and fix recommendations are specifically designed for Meta ad performance.</p>
+            </details>
+            <details className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <summary className="flex items-center justify-between cursor-pointer text-zinc-100 font-medium">
+                Do you store my ad creatives?
+                <svg className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-zinc-400 text-sm">Your creatives are processed for analysis only and are not stored permanently. We do not use your ads for training or share them with third parties.</p>
+            </details>
+            <details className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <summary className="flex items-center justify-between cursor-pointer text-zinc-100 font-medium">
+                Can my team use GetAdScore together?
+                <svg className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-zinc-400 text-sm">Yes! The Agency plan supports team usage with unlimited scoring. Each team member can score ads and download reports independently.</p>
+            </details>
+            <details className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <summary className="flex items-center justify-between cursor-pointer text-zinc-100 font-medium">
+                What does &ldquo;first score free&rdquo; mean?
+                <svg className="w-5 h-5 text-zinc-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <p className="mt-3 text-zinc-400 text-sm">Upload any ad and get a complete analysis with scores and recommendations — no signup or payment required. The full PDF report and detailed fixes are available with a paid plan.</p>
+            </details>
+          </div>
         </div>
       </section>
       )}
