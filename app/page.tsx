@@ -1443,7 +1443,70 @@ export default function Home() {
               </button>
             )}
             {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
+              <UserButton afterSignOutUrl="/">
+                <UserButton.UserProfilePage
+                  label="Subscription"
+                  labelIcon={
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  }
+                  url="subscription"
+                >
+                  <div className="p-6">
+                    <h2 className="text-xl font-semibold mb-4">Subscription</h2>
+
+                    <div className="mb-6 p-4 rounded-lg border border-zinc-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-zinc-500">Current Plan</span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          isPaid ? "bg-green-100 text-green-700" : "bg-zinc-100 text-zinc-600"
+                        }`}>
+                          {isPaid ? "Subscribed" : "Free"}
+                        </span>
+                      </div>
+                      <p className="text-lg font-medium">
+                        {isPaid ? "Individual or Agency Plan" : "Free Tier"}
+                      </p>
+                      {!isPaid && (
+                        <p className="text-sm text-zinc-500 mt-1">
+                          {freeReportUsed ? "Free analysis used" : "1 free analysis available"}
+                        </p>
+                      )}
+                    </div>
+
+                    {!isPaid && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-zinc-600">
+                          Upgrade to unlock unlimited ad analyses and premium features.
+                        </p>
+                        <a
+                          href="#pricing"
+                          className="inline-block px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-medium hover:bg-zinc-800 transition-colors"
+                        >
+                          View Plans
+                        </a>
+                      </div>
+                    )}
+
+                    {isPaid && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-zinc-600">
+                          You have unlimited access to all features.
+                        </p>
+                        <a
+                          href="https://billing.stripe.com/p/login/test_5kA00r1kQ9Sx9Og8ww"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block px-4 py-2 border border-zinc-300 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors"
+                        >
+                          Manage Billing
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </UserButton.UserProfilePage>
+              </UserButton>
             ) : (
               <SignInButton mode="modal">
                 <button className="text-sm text-zinc-500 hover:text-zinc-100 transition-colors">
