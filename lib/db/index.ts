@@ -341,6 +341,7 @@ export interface PublicReport {
     transcript?: string;
   };
   pdf_url: string | null;
+  creative_url: string | null;
   created_at: string;
 }
 
@@ -363,12 +364,13 @@ export async function savePublicReport(data: {
   verdict: string;
   reportData: PublicReport['report_data'];
   pdfUrl?: string;
+  creativeUrl?: string;
 }): Promise<PublicReport> {
   const slug = generateSlug(data.adName);
 
   const result = await getDb()`
     INSERT INTO public_reports (
-      slug, user_email, ad_name, overall_score, verdict, report_data, pdf_url
+      slug, user_email, ad_name, overall_score, verdict, report_data, pdf_url, creative_url
     )
     VALUES (
       ${slug},
@@ -377,7 +379,8 @@ export async function savePublicReport(data: {
       ${data.overallScore},
       ${data.verdict},
       ${JSON.stringify(data.reportData)}::jsonb,
-      ${data.pdfUrl || null}
+      ${data.pdfUrl || null},
+      ${data.creativeUrl || null}
     )
     RETURNING *
   `;
