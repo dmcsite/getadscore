@@ -289,6 +289,13 @@ export default function Home() {
 
       // Save report to database and get public URL
       try {
+        // Compute verdict from score
+        let verdict = "NEEDS WORK";
+        if (data.overallScore >= 85) verdict = "SCALE CANDIDATE";
+        else if (data.overallScore >= 75) verdict = "READY TO TEST";
+        else if (data.overallScore >= 60) verdict = "NEEDS WORK";
+        else verdict = "MAJOR ISSUES";
+
         const saveRes = await fetch("/api/save-report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -296,7 +303,7 @@ export default function Home() {
             userEmail: userEmail || null,
             adName: brandName || "Untitled Ad",
             overallScore: data.overallScore,
-            verdict: data.verdict,
+            verdict,
             reportData: {
               summary: {
                 strength: data.executiveSummary?.biggestStrength || "",
@@ -308,16 +315,19 @@ export default function Home() {
                 acc[key] = { score: cat.score, reason: cat.reason };
                 return acc;
               }, {}),
-              top_fixes: data.topFixes,
+              top_fixes: data.topFixes || [],
               media_type: data.mediaType || "image",
               transcript: data.transcript,
             },
           }),
         });
         const saveData = await saveRes.json();
+        console.log("Save report response:", saveData);
         if (saveData.success && saveData.reportUrl) {
           setReportUrl(saveData.reportUrl);
           setReportSlug(saveData.slug);
+        } else if (saveData.error) {
+          console.error("Save report error:", saveData.error);
         }
       } catch (saveErr) {
         console.error("Failed to save report:", saveErr);
