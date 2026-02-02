@@ -2857,7 +2857,7 @@ export default function Home() {
                   <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Early access to agency features (white-label, client workspaces)</span>
+                  <span>Early access to agency upgrades (white-label, client workspaces)</span>
                 </li>
               </ul>
 
