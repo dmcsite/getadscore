@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
         canUseFreeTier: !status.hasUsedFree || status.isSubscribed,
         hasUsedFree: status.hasUsedFree,
         isSubscribed: status.isSubscribed,
+        planType: status.planType,
       });
     }
 

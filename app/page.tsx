@@ -119,6 +119,7 @@ export default function Home() {
   // Gating state
   const [freeReportUsed, setFreeReportUsed] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [planType, setPlanType] = useState<string | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
 
   // Sign-in prompt state
@@ -154,6 +155,7 @@ export default function Home() {
           setFreeReportUsed(data.hasUsedFree && !data.isSubscribed);
           if (data.isSubscribed) {
             setIsPaid(true);
+            setPlanType(data.planType);
             localStorage.setItem("isPaid", "true");
           }
         })
@@ -1462,12 +1464,20 @@ export default function Home() {
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
                           isPaid ? "bg-green-100 text-green-700" : "bg-zinc-100 text-zinc-600"
                         }`}>
-                          {isPaid ? "Subscribed" : "Free"}
+                          {isPaid ? (planType === "agency" ? "Agency" : "Individual") : "Free"}
                         </span>
                       </div>
                       <p className="text-lg font-medium">
-                        {isPaid ? "Individual or Agency Plan" : "Free Tier"}
+                        {isPaid
+                          ? (planType === "agency" ? "Agency Plan" : "Individual Plan")
+                          : "Free Tier"
+                        }
                       </p>
+                      {isPaid && (
+                        <p className="text-sm text-zinc-500 mt-1">
+                          {planType === "agency" ? "$149/month" : "$49/month"}
+                        </p>
+                      )}
                       {!isPaid && (
                         <p className="text-sm text-zinc-500 mt-1">
                           {freeReportUsed ? "Free analysis used" : "1 free analysis available"}
@@ -1494,14 +1504,26 @@ export default function Home() {
                         <p className="text-sm text-zinc-600">
                           You have unlimited access to all features.
                         </p>
-                        <a
-                          href="https://billing.stripe.com/p/login/test_5kA00r1kQ9Sx9Og8ww"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block px-4 py-2 border border-zinc-300 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors"
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/billing-portal", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: userEmail }),
+                              });
+                              const data = await res.json();
+                              if (data.url) {
+                                window.open(data.url, "_blank");
+                              }
+                            } catch (err) {
+                              console.error("Failed to open billing portal:", err);
+                            }
+                          }}
+                          className="inline-block px-4 py-2 border border-zinc-300 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors cursor-pointer"
                         >
                           Manage Billing
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>

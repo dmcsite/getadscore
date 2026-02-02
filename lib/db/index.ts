@@ -251,26 +251,29 @@ export interface FreeUser {
   email: string;
   used_free_at: string;
   subscribed_at: string | null;
+  plan_type: string | null;
+  stripe_customer_id: string | null;
   created_at: string;
 }
 
 // Check if email has used free tier
-export async function checkFreeUsage(email: string): Promise<{ hasUsedFree: boolean; isSubscribed: boolean }> {
+export async function checkFreeUsage(email: string): Promise<{ hasUsedFree: boolean; isSubscribed: boolean; planType: string | null }> {
   const normalizedEmail = email.toLowerCase().trim();
 
   const result = await getDb()`
-    SELECT used_free_at, subscribed_at FROM free_users
+    SELECT used_free_at, subscribed_at, plan_type FROM free_users
     WHERE email = ${normalizedEmail}
   `;
 
   if (result.length === 0) {
-    return { hasUsedFree: false, isSubscribed: false };
+    return { hasUsedFree: false, isSubscribed: false, planType: null };
   }
 
-  const user = result[0] as { used_free_at: string | null; subscribed_at: string | null };
+  const user = result[0] as { used_free_at: string | null; subscribed_at: string | null; plan_type: string | null };
   return {
     hasUsedFree: user.used_free_at !== null,
     isSubscribed: user.subscribed_at !== null,
+    planType: user.plan_type,
   };
 }
 
@@ -286,12 +289,31 @@ export async function recordFreeUsage(email: string): Promise<void> {
 }
 
 // Mark email as subscribed
-export async function markSubscribed(email: string): Promise<void> {
+export async function markSubscribed(email: string, planType?: string, stripeCustomerId?: string): Promise<void> {
   const normalizedEmail = email.toLowerCase().trim();
 
   await getDb()`
-    INSERT INTO free_users (email, subscribed_at)
-    VALUES (${normalizedEmail}, NOW())
-    ON CONFLICT (email) DO UPDATE SET subscribed_at = NOW()
+    INSERT INTO free_users (email, subscribed_at, plan_type, stripe_customer_id)
+    VALUES (${normalizedEmail}, NOW(), ${planType || null}, ${stripeCustomerId || null})
+    ON CONFLICT (email) DO UPDATE SET
+      subscribed_at = NOW(),
+      plan_type = COALESCE(${planType || null}, free_users.plan_type),
+      stripe_customer_id = COALESCE(${stripeCustomerId || null}, free_users.stripe_customer_id)
   `;
+}
+
+// Get Stripe customer ID for email
+export async function getStripeCustomerId(email: string): Promise<string | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const result = await getDb()`
+    SELECT stripe_customer_id FROM free_users
+    WHERE email = ${normalizedEmail}
+  `;
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  return (result[0] as { stripe_customer_id: string | null }).stripe_customer_id;
 }

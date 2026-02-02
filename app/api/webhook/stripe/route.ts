@@ -42,11 +42,34 @@ export async function POST(request: NextRequest) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const customerEmail = session.customer_details?.email;
+    const customerId = session.customer as string;
 
     if (customerEmail) {
       try {
-        await markSubscribed(customerEmail);
-        console.log(`Marked ${customerEmail} as subscribed`);
+        // Determine plan type from the session
+        let planType = "individual"; // default
+
+        // Try to get line items to determine plan
+        if (session.id) {
+          try {
+            const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+            const item = lineItems.data[0];
+            if (item?.price?.product) {
+              const product = await stripe.products.retrieve(item.price.product as string);
+              const productName = product.name.toLowerCase();
+              if (productName.includes("agency")) {
+                planType = "agency";
+              } else if (productName.includes("individual")) {
+                planType = "individual";
+              }
+            }
+          } catch (lineItemErr) {
+            console.error("Failed to get line items:", lineItemErr);
+          }
+        }
+
+        await markSubscribed(customerEmail, planType, customerId);
+        console.log(`Marked ${customerEmail} as subscribed (${planType})`);
       } catch (err) {
         console.error("Failed to mark user as subscribed:", err);
       }
