@@ -1425,24 +1425,6 @@ export default function Home() {
               </span>
             </div>
 
-            {/* See Sample Report - moved above upload */}
-            <div className="text-center mb-6">
-              <a
-                href="/api/sample-report"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                See a sample report
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            </div>
-
             {/* Upload Zone */}
             <div
               onDrop={handleDrop}
@@ -1566,6 +1548,119 @@ export default function Home() {
                   <p className="text-zinc-500 text-sm">{feature.description}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Sample Report Preview */}
+            <div className="mt-20">
+              <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">Here&apos;s What You&apos;ll Get</h2>
+              <div className="max-w-3xl mx-auto rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 md:p-8">
+                {/* Mock Report Preview */}
+                <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 mb-6">
+                  {/* Report Header */}
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">G</span>
+                      </div>
+                      <div>
+                        <div className="text-zinc-100 font-semibold text-sm">GetAdScore Report</div>
+                        <div className="text-zinc-500 text-xs">GlowSkin - Vitamin C Serum Ad</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-yellow-500">72</div>
+                      <div className="text-xs text-zinc-500">READY TO TEST</div>
+                    </div>
+                  </div>
+
+                  {/* Score Categories Preview */}
+                  <div className="grid grid-cols-4 gap-3 mb-6">
+                    {[
+                      { name: "Thumb-Stop", score: 8 },
+                      { name: "Hook Clarity", score: 7 },
+                      { name: "Social Proof", score: 3 },
+                      { name: "CTA Strength", score: 7 },
+                    ].map((cat) => (
+                      <div key={cat.name} className="text-center p-2 rounded-lg bg-zinc-800/50">
+                        <div className={`text-lg font-bold ${cat.score >= 7 ? 'text-green-500' : cat.score >= 5 ? 'text-yellow-500' : 'text-red-500'}`}>
+                          {cat.score}
+                        </div>
+                        <div className="text-xs text-zinc-500 truncate">{cat.name}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Top Fixes Preview */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">Top Fixes</div>
+                    {[
+                      "Add social proof: Include '4.8 stars from 2,847 reviews'",
+                      "Increase product name font size for mobile",
+                      "Add urgency to CTA: 'Get 20% Off Today'",
+                    ].map((fix, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <div className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-xs text-indigo-400 font-medium">{i + 1}</span>
+                        </div>
+                        <span className="text-zinc-400 text-xs">{fix}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <div className="text-center">
+                  <a
+                    href="/api/sample-report"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    View Full Sample Report
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                  <p className="mt-3 text-zinc-500 text-sm">Opens PDF in new tab</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Who It's For */}
+            <div className="mt-20">
+              <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">Built For</h2>
+              <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                <div className="text-center p-6 rounded-xl bg-zinc-900/30 border border-zinc-800">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-zinc-100 mb-2">Meta Media Buyers</h3>
+                  <p className="text-zinc-500 text-sm">Scaling ad spend with confidence</p>
+                </div>
+                <div className="text-center p-6 rounded-xl bg-zinc-900/30 border border-zinc-800">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-zinc-100 mb-2">Shopify Founders</h3>
+                  <p className="text-zinc-500 text-sm">Testing creatives before launch</p>
+                </div>
+                <div className="text-center p-6 rounded-xl bg-zinc-900/30 border border-zinc-800">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-zinc-100 mb-2">Agencies</h3>
+                  <p className="text-zinc-500 text-sm">Running 10+ ads per week</p>
+                </div>
+              </div>
             </div>
           </div>
         ) : !result && pendingFile ? (
@@ -2596,14 +2691,11 @@ export default function Home() {
       <section id="pricing" className="border-t border-zinc-800 mt-20 py-20 bg-zinc-900/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className="text-zinc-600 text-sm mb-4">
-              Built for Meta media buyers, Shopify founders, and agencies running 10+ creatives per week
-            </p>
             <h2 className="text-3xl md:text-4xl font-bold text-zinc-100 mb-4">
               Simple, Transparent Pricing
             </h2>
             <p className="text-zinc-500 text-base max-w-2xl mx-auto">
-              Most advertisers waste $500–$2,000 testing bad creatives. Know before you spend.
+              Most advertisers waste $500–$2,000 testing bad creatives. Know what works before you spend.
             </p>
           </div>
 
