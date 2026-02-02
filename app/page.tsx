@@ -1385,7 +1385,7 @@ export default function Home() {
                 Score Your Ad Before You Spend
               </h1>
               <p className="text-zinc-500 text-lg max-w-2xl mx-auto mb-4">
-                AI-powered creative analysis built on 10+ years of media buying experience.
+                Creative analysis built on 10+ years of media buying experience.
                 Know if your ad is test-ready before spending a dollar.
               </p>
               <p className="text-zinc-600 text-sm">
@@ -1495,8 +1495,8 @@ export default function Home() {
                     </svg>
                   </div>
                   <div className="text-xs font-medium text-indigo-400 mb-2">STEP 2</div>
-                  <h3 className="font-semibold text-zinc-100 mb-2">AI Analysis</h3>
-                  <p className="text-zinc-500 text-sm">Our AI scores 8 dimensions in ~60 seconds using proven frameworks</p>
+                  <h3 className="font-semibold text-zinc-100 mb-2">Instant Analysis</h3>
+                  <p className="text-zinc-500 text-sm">Scores 8 dimensions in ~60 seconds using proven frameworks</p>
                 </div>
                 <div className="text-center">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center">
