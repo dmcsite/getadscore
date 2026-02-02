@@ -2,19 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdById, downloadCreative } from "@/lib/foreplay";
 import { savePublicReport } from "@/lib/db";
 
-// Reuse the scoring logic from the main score endpoint
+// Score creative by calling the score API with multipart form data
 async function scoreCreative(
   buffer: Buffer,
   contentType: string,
   adCopy?: { primaryText?: string; headline?: string; description?: string }
 ) {
-  // Create a FormData-like structure to pass to the score endpoint
-  const formData = new FormData();
-
   // Determine file extension from content type
   let ext = "jpg";
+  let isVideo = false;
   if (contentType.includes("video")) {
     ext = contentType.includes("mp4") ? "mp4" : "mov";
+    isVideo = true;
   } else if (contentType.includes("png")) {
     ext = "png";
   } else if (contentType.includes("gif")) {
@@ -23,19 +22,49 @@ async function scoreCreative(
     ext = "webp";
   }
 
-  const blob = new Blob([buffer], { type: contentType });
-  const file = new File([blob], `creative.${ext}`, { type: contentType });
-  formData.append("file", file);
+  // Build multipart form data manually for Node.js
+  const boundary = "----FormBoundary" + Math.random().toString(36).substring(2);
+  const filename = `creative.${ext}`;
 
+  // Build parts
+  const parts: Buffer[] = [];
+
+  // File part
+  parts.push(Buffer.from(
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
+    `Content-Type: ${contentType}\r\n\r\n`
+  ));
+  parts.push(buffer);
+  parts.push(Buffer.from("\r\n"));
+
+  // Text fields
   if (adCopy?.primaryText) {
-    formData.append("primaryText", adCopy.primaryText);
+    parts.push(Buffer.from(
+      `--${boundary}\r\n` +
+      `Content-Disposition: form-data; name="primaryText"\r\n\r\n` +
+      `${adCopy.primaryText}\r\n`
+    ));
   }
   if (adCopy?.headline) {
-    formData.append("headline", adCopy.headline);
+    parts.push(Buffer.from(
+      `--${boundary}\r\n` +
+      `Content-Disposition: form-data; name="headline"\r\n\r\n` +
+      `${adCopy.headline}\r\n`
+    ));
   }
   if (adCopy?.description) {
-    formData.append("description", adCopy.description);
+    parts.push(Buffer.from(
+      `--${boundary}\r\n` +
+      `Content-Disposition: form-data; name="description"\r\n\r\n` +
+      `${adCopy.description}\r\n`
+    ));
   }
+
+  // End boundary
+  parts.push(Buffer.from(`--${boundary}--\r\n`));
+
+  const fullBody = Buffer.concat(parts);
 
   // Call the score API
   const scoreUrl = process.env.NODE_ENV === "production"
@@ -44,12 +73,21 @@ async function scoreCreative(
 
   const response = await fetch(scoreUrl, {
     method: "POST",
-    body: formData,
+    headers: {
+      "Content-Type": `multipart/form-data; boundary=${boundary}`,
+    },
+    body: fullBody,
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to score creative");
+    let errorMsg = "Failed to score creative";
+    try {
+      const error = await response.json();
+      errorMsg = error.error || errorMsg;
+    } catch {
+      // ignore parse error
+    }
+    throw new Error(errorMsg);
   }
 
   return response.json();
