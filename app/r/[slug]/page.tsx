@@ -217,10 +217,10 @@ export default async function PublicReportPage({
         )}
 
         {/* CTA */}
-        <div className="text-center p-8 rounded-2xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
-          <h2 className="text-2xl font-bold mb-3">Want to score your own ads?</h2>
+        <div className="text-center p-8 rounded-2xl bg-zinc-900/80 border border-zinc-700/50">
+          <h2 className="text-2xl font-bold mb-3">Want to score more ads?</h2>
           <p className="text-zinc-400 mb-6">
-            Get instant AI-powered feedback on your ad creatives before you spend money testing.
+            Get instant feedback on your creatives before you spend.
           </p>
           <Link
             href="/"

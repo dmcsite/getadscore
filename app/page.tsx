@@ -296,12 +296,34 @@ export default function Home() {
         else if (data.overallScore >= 60) verdict = "NEEDS WORK";
         else verdict = "MAJOR ISSUES";
 
+        // Generate a meaningful ad name
+        let adName = "";
+        // 1. Use brand name if not default
+        if (brandName && brandName !== "Your Brand") {
+          adName = brandName;
+        }
+        // 2. Try headline
+        else if (headline && headline.trim()) {
+          adName = headline.trim().substring(0, 50);
+        }
+        // 3. Extract from primary text (first ~5 words)
+        else if (primaryText && primaryText.trim()) {
+          const words = primaryText.trim().split(/\s+/).slice(0, 5).join(" ");
+          adName = words.length > 40 ? words.substring(0, 40) + "..." : words;
+        }
+        // 4. Fall back to media type + date
+        if (!adName) {
+          const mediaLabel = data.mediaType === "video" ? "Video Ad" : "Image Ad";
+          const dateStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          adName = `${mediaLabel} - ${dateStr}`;
+        }
+
         const saveRes = await fetch("/api/save-report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userEmail: userEmail || null,
-            adName: brandName || "Untitled Ad",
+            adName,
             overallScore: data.overallScore,
             verdict,
             reportData: {
