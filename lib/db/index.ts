@@ -317,3 +317,93 @@ export async function getStripeCustomerId(email: string): Promise<string | null>
 
   return (result[0] as { stripe_customer_id: string | null }).stripe_customer_id;
 }
+
+// ==========================================
+// Public Reports
+// ==========================================
+
+export interface PublicReport {
+  id: string;
+  slug: string;
+  user_email: string | null;
+  ad_name: string;
+  overall_score: number;
+  verdict: string;
+  report_data: {
+    summary: {
+      strength: string;
+      risk: string;
+      quick_win: string;
+    };
+    scores: Record<string, { score: number; reason: string }>;
+    top_fixes: string[];
+    media_type: string;
+    transcript?: string;
+  };
+  pdf_url: string | null;
+  created_at: string;
+}
+
+// Generate a URL-friendly slug
+function generateSlug(adName: string): string {
+  const cleanName = adName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .substring(0, 30);
+  const randomSuffix = randomBytes(3).toString('hex');
+  return `${cleanName}-${randomSuffix}`;
+}
+
+// Save a public report
+export async function savePublicReport(data: {
+  userEmail?: string;
+  adName: string;
+  overallScore: number;
+  verdict: string;
+  reportData: PublicReport['report_data'];
+  pdfUrl?: string;
+}): Promise<PublicReport> {
+  const slug = generateSlug(data.adName);
+
+  const result = await getDb()`
+    INSERT INTO public_reports (
+      slug, user_email, ad_name, overall_score, verdict, report_data, pdf_url
+    )
+    VALUES (
+      ${slug},
+      ${data.userEmail || null},
+      ${data.adName},
+      ${data.overallScore},
+      ${data.verdict},
+      ${JSON.stringify(data.reportData)}::jsonb,
+      ${data.pdfUrl || null}
+    )
+    RETURNING *
+  `;
+
+  return result[0] as PublicReport;
+}
+
+// Get a public report by slug
+export async function getPublicReportBySlug(slug: string): Promise<PublicReport | null> {
+  const result = await getDb()`
+    SELECT * FROM public_reports
+    WHERE slug = ${slug}
+  `;
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  return result[0] as PublicReport;
+}
+
+// Update public report with PDF URL
+export async function updatePublicReportPdfUrl(slug: string, pdfUrl: string): Promise<void> {
+  await getDb()`
+    UPDATE public_reports
+    SET pdf_url = ${pdfUrl}
+    WHERE slug = ${slug}
+  `;
+}

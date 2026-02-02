@@ -121,6 +121,8 @@ export default function Home() {
   const [isPaid, setIsPaid] = useState(false);
   const [planType, setPlanType] = useState<string | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
+  const [reportSlug, setReportSlug] = useState<string | null>(null);
 
   // Sign-in prompt state
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
@@ -285,6 +287,39 @@ export default function Home() {
       setResult(data);
       setPendingFile(null);
 
+      // Save report to database and get public URL
+      try {
+        const saveRes = await fetch("/api/save-report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userEmail: userEmail || null,
+            adName: brandName || "Untitled Ad",
+            overallScore: data.overallScore,
+            verdict: data.verdict,
+            reportData: {
+              summary: data.summary,
+              scores: data.categories.reduce((acc: Record<string, { score: number; reason: string }>, cat: { name: string; score: number; reason: string }) => {
+                const key = cat.name.toLowerCase().replace(/[^a-z]+/g, '_');
+                acc[key] = { score: cat.score, reason: cat.reason };
+                return acc;
+              }, {}),
+              top_fixes: data.topFixes,
+              media_type: data.mediaType || "image",
+              transcript: data.transcript,
+            },
+          }),
+        });
+        const saveData = await saveRes.json();
+        if (saveData.success && saveData.reportUrl) {
+          setReportUrl(saveData.reportUrl);
+          setReportSlug(saveData.slug);
+        }
+      } catch (saveErr) {
+        console.error("Failed to save report:", saveErr);
+        // Don't block the user experience if saving fails
+      }
+
       // Record free usage in database (only if not already paid and not subscribed)
       if (!isPaid && userEmail) {
         // Re-check subscription status in case they just subscribed
@@ -370,6 +405,8 @@ export default function Home() {
       topFixes: false,
       whatsWorking: false,
     });
+    setReportUrl(null);
+    setReportSlug(null);
   }, []);
 
   const getScoreColor = (score: number) => {
@@ -2087,6 +2124,27 @@ export default function Home() {
                   }`}>
                     {result.mediaType === "video" ? "Video Ad" : "Image Ad"}
                   </span>
+                )}
+
+                {/* Public Report URL */}
+                {reportUrl && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-500 text-xs">Share:</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(reportUrl);
+                        const btn = document.getElementById('copy-url-btn');
+                        if (btn) {
+                          btn.textContent = 'Copied!';
+                          setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000);
+                        }
+                      }}
+                      id="copy-url-btn"
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                    >
+                      Copy Link
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
