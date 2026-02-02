@@ -244,3 +244,54 @@ export async function cleanupExpiredReports(): Promise<number> {
 
   return result.length;
 }
+
+// Free tier tracking
+export interface FreeUser {
+  id: string;
+  email: string;
+  used_free_at: string;
+  subscribed_at: string | null;
+  created_at: string;
+}
+
+// Check if email has used free tier
+export async function checkFreeUsage(email: string): Promise<{ hasUsedFree: boolean; isSubscribed: boolean }> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const result = await getDb()`
+    SELECT used_free_at, subscribed_at FROM free_users
+    WHERE email = ${normalizedEmail}
+  `;
+
+  if (result.length === 0) {
+    return { hasUsedFree: false, isSubscribed: false };
+  }
+
+  const user = result[0] as { used_free_at: string | null; subscribed_at: string | null };
+  return {
+    hasUsedFree: user.used_free_at !== null,
+    isSubscribed: user.subscribed_at !== null,
+  };
+}
+
+// Record free usage for email
+export async function recordFreeUsage(email: string): Promise<void> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  await getDb()`
+    INSERT INTO free_users (email, used_free_at)
+    VALUES (${normalizedEmail}, NOW())
+    ON CONFLICT (email) DO UPDATE SET used_free_at = NOW()
+  `;
+}
+
+// Mark email as subscribed
+export async function markSubscribed(email: string): Promise<void> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  await getDb()`
+    INSERT INTO free_users (email, subscribed_at)
+    VALUES (${normalizedEmail}, NOW())
+    ON CONFLICT (email) DO UPDATE SET subscribed_at = NOW()
+  `;
+}

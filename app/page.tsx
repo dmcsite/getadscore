@@ -116,6 +116,12 @@ export default function Home() {
   const [isPaid, setIsPaid] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
 
+  // Email capture state
+  const [userEmail, setUserEmail] = useState("");
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+
   // Check localStorage and URL params on mount
   useEffect(() => {
     // Check for magic unlock parameter
@@ -131,10 +137,30 @@ export default function Home() {
 
     // Check localStorage for existing state
     const storedIsPaid = localStorage.getItem("isPaid") === "true";
-    const storedFreeUsed = localStorage.getItem("freeReportUsed") === "true";
+    const storedEmail = localStorage.getItem("userEmail") || "";
 
     setIsPaid(storedIsPaid);
-    setFreeReportUsed(storedFreeUsed);
+    setUserEmail(storedEmail);
+
+    // If we have an email, check if they've used free tier
+    if (storedEmail) {
+      fetch("/api/free-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: storedEmail, action: "check" }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setFreeReportUsed(data.hasUsedFree && !data.isSubscribed);
+          if (data.isSubscribed) {
+            setIsPaid(true);
+            localStorage.setItem("isPaid", "true");
+          }
+        })
+        .catch(() => {
+          // Silently fail - will check again on submission
+        });
+    }
   }, []);
 
   // Computed: should show full results?
@@ -199,10 +225,32 @@ export default function Home() {
   const submitAnalysis = useCallback(async () => {
     if (!pendingFile) return;
 
+    // If user hasn't entered email yet and isn't paid, show email modal
+    if (!userEmail && !isPaid) {
+      setShowEmailModal(true);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
+      // Check if user can use free tier (only if not paid)
+      if (!isPaid && userEmail) {
+        const checkRes = await fetch("/api/free-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail, action: "check" }),
+        });
+        const checkData = await checkRes.json();
+
+        if (!checkData.canUseFreeTier) {
+          setError("You've used your free analysis. Subscribe to continue scoring ads.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const formData = new FormData();
       formData.append("file", pendingFile);
 
@@ -231,9 +279,13 @@ export default function Home() {
       setResult(data);
       setPendingFile(null);
 
-      // Mark free report as used (only if not already paid)
-      if (!isPaid && !freeReportUsed) {
-        localStorage.setItem("freeReportUsed", "true");
+      // Record free usage in database (only if not already paid)
+      if (!isPaid && userEmail) {
+        await fetch("/api/free-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail, action: "record" }),
+        });
         setFreeReportUsed(true);
       }
     } catch (err) {
@@ -241,7 +293,47 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [pendingFile, primaryText, headline, description, isPaid, freeReportUsed]);
+  }, [pendingFile, primaryText, headline, description, isPaid, userEmail]);
+
+  // Handle email submission from modal
+  const handleEmailSubmit = useCallback(async (email: string) => {
+    setIsCheckingEmail(true);
+    setEmailError(null);
+
+    try {
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setEmailError("Please enter a valid email address");
+        return;
+      }
+
+      // Check if email can use free tier
+      const checkRes = await fetch("/api/free-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, action: "check" }),
+      });
+      const checkData = await checkRes.json();
+
+      if (!checkData.canUseFreeTier) {
+        setEmailError("You've used your free analysis. Subscribe to continue scoring ads.");
+        return;
+      }
+
+      // Email is valid and can use free tier
+      setUserEmail(email);
+      localStorage.setItem("userEmail", email);
+      setShowEmailModal(false);
+
+      // Now trigger the actual analysis
+      submitAnalysis();
+    } catch {
+      setEmailError("Something went wrong. Please try again.");
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }, [submitAnalysis]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -2676,6 +2768,74 @@ export default function Home() {
         </div>
       )}
 
+      {/* Email Capture Modal */}
+      {showEmailModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setShowEmailModal(false)}
+        >
+          <div
+            className="relative bg-zinc-900 rounded-2xl border border-zinc-700 p-8 max-w-md mx-4 w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowEmailModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-zinc-100 mb-2">Enter your email to get your free report</h3>
+              <p className="text-zinc-400 text-sm mb-6">One free analysis per email. No account required.</p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const email = formData.get("email") as string;
+                  handleEmailSubmit(email);
+                }}
+                className="space-y-4"
+              >
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="you@example.com"
+                  required
+                  className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                />
+                {emailError && (
+                  <p className="text-red-400 text-sm">{emailError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={isCheckingEmail}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isCheckingEmail ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    "Get My Free Report"
+                  )}
+                </button>
+              </form>
+              <p className="mt-4 text-zinc-600 text-xs">
+                We&apos;ll only use this to track your free analysis.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PDF Unlock Modal */}
       {showPdfModal && (
         <div
@@ -2726,7 +2886,7 @@ export default function Home() {
       <section className="mt-20 py-16">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-zinc-100 mb-4">Ready to score your first ad?</h2>
-          <p className="text-zinc-500 mb-8">First score is free, no signup required.</p>
+          <p className="text-zinc-500 mb-8">First score is free — just enter your email.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
