@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { jsPDF } from "jspdf";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 
 interface Category {
   name: string;
@@ -95,6 +96,10 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 
 export default function Home() {
+  // Clerk auth
+  const { isSignedIn, user, isLoaded } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,13 +121,10 @@ export default function Home() {
   const [isPaid, setIsPaid] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
 
-  // Email capture state
-  const [userEmail, setUserEmail] = useState("");
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  // Sign-in prompt state
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
 
-  // Check localStorage and URL params on mount
+  // Check subscription status when user signs in
   useEffect(() => {
     // Check for magic unlock parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -130,24 +132,22 @@ export default function Home() {
     if (unlockParam === "getadscore2024") {
       localStorage.setItem("isPaid", "true");
       setIsPaid(true);
-      // Remove the parameter from URL without reload
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
 
-    // Check localStorage for existing state
+    // Check localStorage for paid status
     const storedIsPaid = localStorage.getItem("isPaid") === "true";
-    const storedEmail = localStorage.getItem("userEmail") || "";
+    if (storedIsPaid) {
+      setIsPaid(true);
+    }
 
-    setIsPaid(storedIsPaid);
-    setUserEmail(storedEmail);
-
-    // If we have an email, check if they've used free tier
-    if (storedEmail) {
+    // If user is signed in, check their subscription status
+    if (isSignedIn && userEmail) {
       fetch("/api/free-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: storedEmail, action: "check" }),
+        body: JSON.stringify({ email: userEmail, action: "check" }),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -161,7 +161,7 @@ export default function Home() {
           // Silently fail - will check again on submission
         });
     }
-  }, []);
+  }, [isSignedIn, userEmail]);
 
   // Computed: should show full results?
   const hasFullAccess = isPaid || !freeReportUsed;
@@ -225,9 +225,9 @@ export default function Home() {
   const submitAnalysis = useCallback(async () => {
     if (!pendingFile) return;
 
-    // If user hasn't entered email yet and isn't paid, show email modal
-    if (!userEmail && !isPaid) {
-      setShowEmailModal(true);
+    // If user isn't signed in and isn't paid, show sign-in prompt
+    if (!isSignedIn && !isPaid) {
+      setShowSignInPrompt(true);
       return;
     }
 
@@ -310,47 +310,8 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [pendingFile, primaryText, headline, description, isPaid, userEmail]);
+  }, [pendingFile, primaryText, headline, description, isPaid, isSignedIn, userEmail]);
 
-  // Handle email submission from modal
-  const handleEmailSubmit = useCallback(async (email: string) => {
-    setIsCheckingEmail(true);
-    setEmailError(null);
-
-    try {
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setEmailError("Please enter a valid email address");
-        return;
-      }
-
-      // Check if email can use free tier
-      const checkRes = await fetch("/api/free-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, action: "check" }),
-      });
-      const checkData = await checkRes.json();
-
-      if (!checkData.canUseFreeTier) {
-        setEmailError("You've used your free analysis. Subscribe to continue scoring ads.");
-        return;
-      }
-
-      // Email is valid and can use free tier
-      setUserEmail(email);
-      localStorage.setItem("userEmail", email);
-      setShowEmailModal(false);
-
-      // Now trigger the actual analysis
-      submitAnalysis();
-    } catch {
-      setEmailError("Something went wrong. Please try again.");
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  }, [submitAnalysis]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -1480,6 +1441,17 @@ export default function Home() {
               >
                 Score another ad
               </button>
+            )}
+            {isLoaded && (
+              isSignedIn ? (
+                <UserButton afterSignOutUrl="/" />
+              ) : (
+                <SignInButton mode="modal">
+                  <button className="text-sm text-zinc-500 hover:text-zinc-100 transition-colors">
+                    Sign In
+                  </button>
+                </SignInButton>
+              )
             )}
           </div>
         </div>
@@ -2785,18 +2757,18 @@ export default function Home() {
         </div>
       )}
 
-      {/* Email Capture Modal */}
-      {showEmailModal && (
+      {/* Sign In Prompt Modal */}
+      {showSignInPrompt && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          onClick={() => setShowEmailModal(false)}
+          onClick={() => setShowSignInPrompt(false)}
         >
           <div
             className="relative bg-zinc-900 rounded-2xl border border-zinc-700 p-8 max-w-md mx-4 w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setShowEmailModal(false)}
+              onClick={() => setShowSignInPrompt(false)}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2806,47 +2778,18 @@ export default function Home() {
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                 <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-zinc-100 mb-2">Enter your email to get your free report</h3>
-              <p className="text-zinc-400 text-sm mb-6">One free analysis per email. No account required.</p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const email = formData.get("email") as string;
-                  handleEmailSubmit(email);
-                }}
-                className="space-y-4"
-              >
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="you@example.com"
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-                />
-                {emailError && (
-                  <p className="text-red-400 text-sm">{emailError}</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={isCheckingEmail}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isCheckingEmail ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Checking...
-                    </>
-                  ) : (
-                    "Get My Free Report"
-                  )}
+              <h3 className="text-xl font-semibold text-zinc-100 mb-2">Sign in to get your free report</h3>
+              <p className="text-zinc-400 text-sm mb-6">One free analysis per account. Takes 10 seconds.</p>
+              <SignInButton mode="modal">
+                <button className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-colors">
+                  Sign In / Sign Up
                 </button>
-              </form>
+              </SignInButton>
               <p className="mt-4 text-zinc-600 text-xs">
-                We&apos;ll only use this to track your free analysis.
+                Continue with Google or email
               </p>
             </div>
           </div>
