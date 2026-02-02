@@ -2863,36 +2863,40 @@ export default function Home() {
       </section>
       )}
 
-      {/* Testimonials Section */}
+      {/* Why Trust the Score Section */}
       {(hasFullAccess || !result) && (
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">What Users Say</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800">
-              <p className="text-zinc-300 mb-4">&ldquo;Caught a policy issue before launch that would have gotten my account flagged. Paid for itself immediately.&rdquo;</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">M</div>
-                <div>
-                  <div className="text-zinc-100 font-medium">Marcus T.</div>
-                  <div className="text-zinc-500 text-sm">Shopify Founder</div>
-                </div>
+          <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">Why Trust the Score</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center p-6 rounded-xl bg-zinc-900/30 border border-zinc-800">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
+              <h3 className="font-semibold text-zinc-100 mb-2">20 Years of Experience</h3>
+              <p className="text-zinc-500 text-sm">Scoring criteria built from real campaign performance, not theory</p>
             </div>
-            <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800">
-              <p className="text-zinc-300 mb-4">&ldquo;Helped us pick the best creative faster. We used to debate for hours — now we just check the score.&rdquo;</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">S</div>
-                <div>
-                  <div className="text-zinc-100 font-medium">Sarah K.</div>
-                  <div className="text-zinc-500 text-sm">Media Buyer</div>
-                </div>
+            <div className="text-center p-6 rounded-xl bg-zinc-900/30 border border-zinc-800">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
+              <h3 className="font-semibold text-zinc-100 mb-2">8 Proven Dimensions</h3>
+              <p className="text-zinc-500 text-sm">Every factor that impacts Meta ad performance, weighted by importance</p>
+            </div>
+            <div className="text-center p-6 rounded-xl bg-zinc-900/30 border border-zinc-800">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-zinc-100 mb-2">Specific, Not Generic</h3>
+              <p className="text-zinc-500 text-sm">Fixes you can apply today, not vague best practices</p>
             </div>
           </div>
-          <p className="text-center text-zinc-600 text-sm mt-6">
-            Built from analyzing 10,000+ ad creatives
-          </p>
         </div>
       </section>
       )}
