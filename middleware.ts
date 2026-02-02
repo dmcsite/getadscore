@@ -11,6 +11,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/score',
   '/api/free-check',
   '/api/save-report',
+  '/api/foreplay/(.*)',
+  '/api/analyze-external',
   '/privacy',
   '/terms',
   '/success',
