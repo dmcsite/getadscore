@@ -244,7 +244,11 @@ export default function Home() {
         });
         const checkData = await checkRes.json();
 
-        if (!checkData.canUseFreeTier) {
+        // If user is subscribed, unlock full access
+        if (checkData.isSubscribed) {
+          setIsPaid(true);
+          localStorage.setItem("isPaid", "true");
+        } else if (!checkData.canUseFreeTier) {
           setError("You've used your free analysis. Subscribe to continue scoring ads.");
           setIsLoading(false);
           return;
@@ -279,14 +283,27 @@ export default function Home() {
       setResult(data);
       setPendingFile(null);
 
-      // Record free usage in database (only if not already paid)
+      // Record free usage in database (only if not already paid and not subscribed)
       if (!isPaid && userEmail) {
-        await fetch("/api/free-check", {
+        // Re-check subscription status in case they just subscribed
+        const checkRes = await fetch("/api/free-check", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: userEmail, action: "record" }),
+          body: JSON.stringify({ email: userEmail, action: "check" }),
         });
-        setFreeReportUsed(true);
+        const checkData = await checkRes.json();
+
+        if (checkData.isSubscribed) {
+          setIsPaid(true);
+          localStorage.setItem("isPaid", "true");
+        } else {
+          await fetch("/api/free-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: userEmail, action: "record" }),
+          });
+          setFreeReportUsed(true);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
