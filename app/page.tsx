@@ -1385,7 +1385,7 @@ export default function Home() {
                 Score Your Ad Before You Spend
               </h1>
               <p className="text-zinc-500 text-lg max-w-2xl mx-auto mb-4">
-                Creative analysis built on 10+ years of media buying experience.
+                Creative analysis built on 20 years of media buying experience.
                 Know if your ad is test-ready before spending a dollar.
               </p>
               <p className="text-zinc-600 text-sm">
