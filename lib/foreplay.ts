@@ -86,12 +86,29 @@ async function foreplayFetch<T>(endpoint: string, params?: Record<string, string
 }
 
 // Normalize a Foreplay ad to our standard format
-function normalizeAd(ad: ForeplayAd): NormalizedAd {
-  const creativeUrl = ad.video || ad.image || "";
-  const creativeType = ad.video ? "video" : "image";
+function normalizeAd(ad: ForeplayAd & { cards?: Array<{ image?: string; video?: string; headline?: string; description?: string; full_transcription?: string }> }): NormalizedAd {
+  // Try to get creative from cards first (for carousel/DCO ads), then fallback to top-level
+  let creativeUrl = ad.video || ad.image || "";
+  let creativeType: "video" | "image" = ad.video ? "video" : "image";
+  let transcript = ad.full_transcription;
 
-  // Build ad copy from name and description
-  const adCopy = [ad.name, ad.description].filter(Boolean).join("\n\n");
+  // Check cards for creative if not found at top level
+  if (!creativeUrl && ad.cards && ad.cards.length > 0) {
+    const firstCard = ad.cards[0];
+    creativeUrl = firstCard.video || firstCard.image || "";
+    creativeType = firstCard.video ? "video" : "image";
+    transcript = transcript || firstCard.full_transcription;
+  }
+
+  // Build ad copy from cards or top-level
+  let adCopy = "";
+  if (ad.cards && ad.cards.length > 0) {
+    const firstCard = ad.cards[0];
+    adCopy = [firstCard.headline, firstCard.description].filter(Boolean).join("\n\n");
+  }
+  if (!adCopy) {
+    adCopy = [ad.name, ad.description].filter(Boolean).join("\n\n");
+  }
 
   // Get platform - Foreplay returns array, take first one
   const platform = Array.isArray(ad.publisher_platform)
@@ -100,12 +117,12 @@ function normalizeAd(ad: ForeplayAd): NormalizedAd {
 
   return {
     id: ad.id || ad.ad_id || "",
-    brandName: ad.name?.split(" ").slice(0, 3).join(" ") || "Unknown Brand",
+    brandName: ad.name || "Unknown Brand",
     creativeUrl,
     creativeType,
     platform,
     adCopy,
-    transcript: ad.full_transcription,
+    transcript,
     thumbnail: ad.thumbnail,
   };
 }
@@ -149,6 +166,19 @@ export async function getAdById(adId: string): Promise<NormalizedAd | null> {
     console.error("Failed to get ad by ID:", error);
     return null;
   }
+}
+
+// Search brands by domain
+export async function searchBrandsByDomain(domain: string): Promise<{ id: string; name: string; avatar?: string }[]> {
+  const response = await foreplayFetch<{
+    data: Array<{
+      id: string;
+      name: string;
+      avatar?: string;
+    }>;
+  }>("/api/brand/getBrandsByDomain", { domain, limit: 10 });
+
+  return response.data || [];
 }
 
 // Get ads from swipefile (saved ads)
