@@ -1389,7 +1389,7 @@ export default function Home() {
                 Know if your ad is test-ready before spending a dollar.
               </p>
               <p className="text-zinc-600 text-sm">
-                Built by a media buyer who&apos;s spent $2.5M+ on Facebook ads
+                Built by performance marketers, for performance marketers
               </p>
             </div>
 
