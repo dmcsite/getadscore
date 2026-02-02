@@ -2762,7 +2762,8 @@ export default function Home() {
             {/* Individual Plan */}
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-zinc-100 mb-2">Individual</h3>
+                <h3 className="text-xl font-semibold text-zinc-100 mb-1">Individual</h3>
+                <p className="text-zinc-500 text-sm mb-3">For solo media buyers & founders</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-zinc-100">$49</span>
                   <span className="text-zinc-500">/month</span>
@@ -2780,25 +2781,25 @@ export default function Home() {
                   <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Video + image analysis</span>
+                  <span>Image + video analysis</span>
                 </li>
                 <li className="flex items-start gap-3 text-zinc-300">
                   <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Copy analysis</span>
-                </li>
-                <li className="flex items-start gap-3 text-zinc-300">
-                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Platform previews (Facebook, Instagram, TikTok)</span>
+                  <span>Copy + hook feedback</span>
                 </li>
                 <li className="flex items-start gap-3 text-zinc-300">
                   <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>PDF export</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Platform previews</span>
                 </li>
               </ul>
 
@@ -2819,7 +2820,8 @@ export default function Home() {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-zinc-100 mb-2">Agency</h3>
+                <h3 className="text-xl font-semibold text-zinc-100 mb-1">Agency</h3>
+                <p className="text-zinc-500 text-sm mb-3">For teams scoring client ads</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-zinc-100">$149</span>
                   <span className="text-zinc-500">/month</span>
@@ -2837,13 +2839,25 @@ export default function Home() {
                   <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
+                  <span>Commercial/client usage rights</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                   <span>Priority support</span>
                 </li>
                 <li className="flex items-start gap-3 text-zinc-300">
                   <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Team-friendly PDF reports</span>
+                  <span>Team-friendly report delivery</span>
+                </li>
+                <li className="flex items-start gap-3 text-zinc-300">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Early access to agency features (white-label, client workspaces)</span>
                 </li>
               </ul>
 
