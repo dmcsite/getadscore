@@ -1388,19 +1388,59 @@ export default function Home() {
                 Creative analysis built on 20 years of media buying experience.
                 Know if your ad is test-ready before spending a dollar.
               </p>
-              <p className="text-zinc-600 text-sm">
+              <p className="text-zinc-600 text-sm mb-6">
                 Built by performance marketers, for performance marketers
               </p>
+
+              {/* Benefit Bullets */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-zinc-500 text-sm">
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Instant creative score in 60 seconds
+                </span>
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Catch policy violations before Meta does
+                </span>
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Know what to fix before spending a dollar
+                </span>
+              </div>
             </div>
 
             {/* Try Free Message */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-4">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Try it free — no signup required for your first analysis
               </span>
+            </div>
+
+            {/* See Sample Report - moved above upload */}
+            <div className="text-center mb-6">
+              <a
+                href="/api/sample-report"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                See a sample report
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
             </div>
 
             {/* Upload Zone */}
@@ -1448,24 +1488,6 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-            </div>
-
-            {/* See Sample Report */}
-            <div className="mt-6 text-center">
-              <a
-                href="/api/sample-report"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                See a sample report
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
             </div>
 
             {error && (
@@ -2574,11 +2596,14 @@ export default function Home() {
       <section id="pricing" className="border-t border-zinc-800 mt-20 py-20 bg-zinc-900/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
+            <p className="text-zinc-600 text-sm mb-4">
+              Built for Meta media buyers, Shopify founders, and agencies running 10+ creatives per week
+            </p>
             <h2 className="text-3xl md:text-4xl font-bold text-zinc-100 mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-zinc-500 text-lg max-w-2xl mx-auto">
-              Stop wasting ad spend on untested creative. Get instant AI feedback before you launch.
+            <p className="text-zinc-500 text-base max-w-2xl mx-auto">
+              Most advertisers waste $500–$2,000 testing bad creatives. Know before you spend.
             </p>
           </div>
 
