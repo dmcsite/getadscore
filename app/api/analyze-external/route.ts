@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
 import { getAdById, downloadCreative } from "@/lib/foreplay";
 import { savePublicReport } from "@/lib/db";
 
@@ -131,36 +130,6 @@ export async function POST(request: NextRequest) {
     // Download the creative
     const { buffer, contentType } = await downloadCreative(finalCreativeUrl);
 
-    // Determine file extension
-    let ext = "jpg";
-    const isVideo = contentType.includes("video");
-    if (isVideo) {
-      ext = contentType.includes("mp4") ? "mp4" : "mov";
-    } else if (contentType.includes("png")) {
-      ext = "png";
-    } else if (contentType.includes("webp")) {
-      ext = "webp";
-    } else if (contentType.includes("gif")) {
-      ext = "gif";
-    }
-
-    // Upload creative to Vercel Blob for permanent storage
-    let storedCreativeUrl: string | undefined;
-    try {
-      const timestamp = Date.now();
-      const slug = (finalBrandName || "ad").toLowerCase().replace(/[^a-z0-9]+/g, "-").substring(0, 30);
-      const blobPath = `creatives/${slug}-${timestamp}.${ext}`;
-
-      const blob = await put(blobPath, buffer, {
-        access: "public",
-        contentType,
-      });
-      storedCreativeUrl = blob.url;
-    } catch (blobError) {
-      console.error("Failed to upload to Vercel Blob:", blobError);
-      // Continue without stored creative - not critical
-    }
-
     // Score the creative
     const scoreResult = await scoreCreative(buffer, contentType, {
       primaryText: finalAdCopy,
@@ -200,7 +169,7 @@ export async function POST(request: NextRequest) {
         media_type: scoreResult.mediaType || "image",
         transcript: transcript || scoreResult.transcript,
       },
-      creativeUrl: storedCreativeUrl,
+      creativeUrl: finalCreativeUrl,
     });
 
     return NextResponse.json({
