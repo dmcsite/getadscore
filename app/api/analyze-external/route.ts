@@ -66,9 +66,9 @@ async function scoreCreative(
 
   const fullBody = Buffer.concat(parts);
 
-  // Call the score API
+  // Call the score API - use www to avoid redirect issues
   const scoreUrl = process.env.NODE_ENV === "production"
-    ? "https://getadscore.com/api/score"
+    ? "https://www.getadscore.com/api/score"
     : "http://localhost:3000/api/score";
 
   const response = await fetch(scoreUrl, {
@@ -181,8 +181,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Analyze external error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to analyze creative";
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to analyze creative" },
+      {
+        error: errorMessage,
+        details: errorStack,
+      },
       { status: 500 }
     );
   }
