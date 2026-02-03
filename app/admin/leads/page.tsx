@@ -320,21 +320,22 @@ export default function LeadsPage() {
     const firstName = lead.contact_name?.split(" ")[0] || "there";
     const brandName = lead.brand_name || lead.domain;
 
-    const template = `Subject: ${brandName}'s ad scored ${lead.score}/100 - quick wins inside
+    const template = `Subject: ${brandName}'s ad scored ${lead.score}/100 — quick wins inside
 
 Hi ${firstName},
 
-I ran ${brandName}'s latest ad through our AI creative analyzer and thought you'd find the results interesting.
+Found your ad in Meta's Ad Library and ran it through our creative analyzer:
 
 ${lead.report_url}
 
-Score: ${lead.score}/100 (${lead.verdict})
-${lead.top_fix ? `\nQuick win: ${lead.top_fix}` : ""}
+Score: ${lead.score}/100 — ${lead.top_fix || "See report for details"}
 
-The full report has specific fixes that could improve performance. Happy to walk through it if useful.
+I've spent $2.5M+ on Meta ads for DTC brands and built this to catch issues before they burn budget. Happy to score 2-3 more free if useful.
 
-Best,
-Geoff`;
+Geoff
+GetAdScore
+
+PS - Reply "stop" if you'd rather not hear from me.`;
 
     navigator.clipboard.writeText(template);
     setCopiedId(lead.id);
