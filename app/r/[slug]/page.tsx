@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPublicReportBySlug } from "@/lib/db";
 import Link from "next/link";
-import Image from "next/image";
 
 // Category display names and order
 const CATEGORY_ORDER = [
@@ -111,17 +110,15 @@ export default async function PublicReportPage({
                     </div>
                   </div>
                   {/* Creative */}
-                  <div className="relative aspect-square bg-zinc-800">
+                  <div className="relative bg-zinc-800">
                     {report_data.media_type === "video" ? (
                       // For videos: show thumbnail image with play overlay, or video player
                       report.thumbnail_url ? (
-                        <>
-                          <Image
+                        <div className="relative">
+                          <img
                             src={report.thumbnail_url}
                             alt={report.ad_name}
-                            fill
-                            className="object-cover"
-                            unoptimized
+                            className="w-full h-auto"
                           />
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
@@ -130,12 +127,12 @@ export default async function PublicReportPage({
                               </svg>
                             </div>
                           </div>
-                        </>
+                        </div>
                       ) : (
                         // No thumbnail - show video player
                         <video
                           src={report.creative_url}
-                          className="w-full h-full object-cover"
+                          className="w-full h-auto"
                           controls
                           muted
                           playsInline
@@ -143,13 +140,11 @@ export default async function PublicReportPage({
                         />
                       )
                     ) : (
-                      // For images: display directly
-                      <Image
+                      // For images: display directly, preserving aspect ratio
+                      <img
                         src={report.creative_url}
                         alt={report.ad_name}
-                        fill
-                        className="object-cover"
-                        unoptimized
+                        className="w-full h-auto"
                       />
                     )}
                   </div>
