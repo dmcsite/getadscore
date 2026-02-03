@@ -1,9 +1,29 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 export default function ViewTracker({ slug }: { slug: string }) {
+  const { isSignedIn } = useAuth();
+
   useEffect(() => {
+    // Skip logging for internal views
+    const shouldSkip = () => {
+      // Skip if user is authenticated
+      if (isSignedIn) return true;
+
+      // Skip if localhost
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return true;
+
+      // Skip if ?preview=true param
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("preview") === "true") return true;
+
+      return false;
+    };
+
+    if (shouldSkip()) return;
+
     // Log view on mount (only once)
     const logView = async () => {
       try {
@@ -22,7 +42,7 @@ export default function ViewTracker({ slug }: { slug: string }) {
     };
 
     logView();
-  }, [slug]);
+  }, [slug, isSignedIn]);
 
   // This component renders nothing
   return null;
