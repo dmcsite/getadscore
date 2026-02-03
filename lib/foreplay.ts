@@ -243,6 +243,8 @@ export async function discoverBrands(
     query?: string;
     niches?: string[];
     limit?: number;
+    imageOnly?: boolean;
+    countries?: string[];
   }
 ): Promise<ForeplayBrand[]> {
   // Use niche as query for better results
@@ -250,9 +252,19 @@ export async function discoverBrands(
 
   const params: Record<string, string | string[] | number> = {
     query,
-    limit: Math.min((options.limit || 10) * 2, 20), // Fetch more to get unique brands
+    limit: Math.min((options.limit || 10) * 3, 30), // Fetch more to get unique brands after filtering
     order: "newest",
   };
+
+  // Filter for images only (skip videos)
+  if (options.imageOnly) {
+    params.display_format = ["image", "carousel"];
+  }
+
+  // Filter by country
+  if (options.countries && options.countries.length > 0) {
+    params.countries = options.countries;
+  }
 
   // Discovery Ads API returns ads with brand info and link URLs
   const response = await foreplayFetch<{
@@ -263,6 +275,7 @@ export async function discoverBrands(
       avatar?: string;
       link_url?: string;
       niches?: string[];
+      display_format?: string;
     }>;
   }>("/api/discovery/ads", params);
 

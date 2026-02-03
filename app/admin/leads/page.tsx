@@ -22,12 +22,23 @@ interface Lead {
   contacted_at: string | null;
 }
 
+interface ProspectContact {
+  name: string;
+  firstName: string | null;
+  title: string | null;
+  email: string;
+  linkedin: string | null;
+}
+
 interface Prospect {
   brandId: string;
   brandName: string;
   domain: string;
   avatar?: string;
   alreadyLead: boolean;
+  contact?: ProspectContact;
+  qualified: boolean;
+  disqualifyReason?: string;
 }
 
 interface BatchResult {
@@ -95,9 +106,12 @@ export default function LeadsPage() {
   // Discover state
   const [showDiscover, setShowDiscover] = useState(false);
   const [discoverNiche, setDiscoverNiche] = useState("beauty");
-  const [discoverLimit, setDiscoverLimit] = useState(10);
+  const [discoverLimit, setDiscoverLimit] = useState(5);
+  const [usUkOnly, setUsUkOnly] = useState(true);
   const [discovering, setDiscovering] = useState(false);
-  const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [qualifiedProspects, setQualifiedProspects] = useState<Prospect[]>([]);
+  const [disqualifiedProspects, setDisqualifiedProspects] = useState<Prospect[]>([]);
+  const [showDisqualified, setShowDisqualified] = useState(false);
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
   const [batchResults, setBatchResults] = useState<BatchResult[] | null>(null);
@@ -132,7 +146,8 @@ export default function LeadsPage() {
 
   const discoverProspects = async () => {
     setDiscovering(true);
-    setProspects([]);
+    setQualifiedProspects([]);
+    setDisqualifiedProspects([]);
     setBatchResults(null);
 
     try {
@@ -142,16 +157,18 @@ export default function LeadsPage() {
         body: JSON.stringify({
           niche: discoverNiche,
           limit: discoverLimit,
+          usUkOnly,
+          includeContact: true,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setProspects(data.prospects);
-        // Pre-select all non-existing leads
-        const newProspects = data.prospects.filter((p: Prospect) => !p.alreadyLead);
-        setSelectedProspects(new Set(newProspects.map((p: Prospect) => p.domain)));
+        setQualifiedProspects(data.qualified || []);
+        setDisqualifiedProspects(data.disqualified || []);
+        // Pre-select all qualified prospects
+        setSelectedProspects(new Set(data.qualified?.map((p: Prospect) => p.domain) || []));
       }
     } catch (error) {
       console.error("Failed to discover prospects:", error);
@@ -199,9 +216,8 @@ export default function LeadsPage() {
     setSelectedProspects(newSelected);
   };
 
-  const selectAllProspects = () => {
-    const newProspects = prospects.filter((p) => !p.alreadyLead);
-    setSelectedProspects(new Set(newProspects.map((p) => p.domain)));
+  const selectAllQualified = () => {
+    setSelectedProspects(new Set(qualifiedProspects.map((p) => p.domain)));
   };
 
   const deselectAllProspects = () => {
@@ -264,6 +280,80 @@ Geoff`;
 
   const totalPages = Math.ceil(total / 50);
 
+  const ProspectCard = ({ prospect, isQualified }: { prospect: Prospect; isQualified: boolean }) => (
+    <div
+      onClick={() => isQualified && !prospect.alreadyLead && toggleProspect(prospect.domain)}
+      className={`p-4 rounded-lg border transition-colors ${
+        prospect.alreadyLead
+          ? "bg-gray-800/50 border-gray-700 opacity-50 cursor-not-allowed"
+          : isQualified
+          ? selectedProspects.has(prospect.domain)
+            ? "bg-green-900/30 border-green-600 cursor-pointer"
+            : "bg-gray-800 border-gray-700 hover:border-gray-600 cursor-pointer"
+          : "bg-gray-800/50 border-gray-700"
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-2">
+        {prospect.avatar && (
+          <img
+            src={prospect.avatar}
+            alt=""
+            className="w-8 h-8 rounded-full"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="font-medium truncate">{prospect.brandName}</div>
+          <div className="text-xs text-gray-500 truncate">{prospect.domain}</div>
+        </div>
+        {isQualified && (
+          <div className="flex-shrink-0">
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+              selectedProspects.has(prospect.domain)
+                ? "bg-green-600 border-green-600"
+                : "border-gray-600"
+            }`}>
+              {selectedProspects.has(prospect.domain) && (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Contact Info */}
+      {prospect.contact ? (
+        <div className="mt-2 pt-2 border-t border-gray-700">
+          <div className="text-sm font-medium text-white">{prospect.contact.name}</div>
+          <div className="text-xs text-purple-400">{prospect.contact.title || "No title"}</div>
+          <div className="text-xs text-gray-500 truncate mt-1">{prospect.contact.email}</div>
+        </div>
+      ) : (
+        <div className="mt-2 pt-2 border-t border-gray-700">
+          <div className="text-xs text-gray-500">No contact info</div>
+        </div>
+      )}
+
+      {/* Status badges */}
+      {prospect.alreadyLead && (
+        <div className="mt-2">
+          <span className="text-xs bg-yellow-900/50 text-yellow-400 px-2 py-0.5 rounded">
+            Already a lead
+          </span>
+        </div>
+      )}
+      {!isQualified && prospect.disqualifyReason && (
+        <div className="mt-2">
+          <span className="text-xs bg-red-900/50 text-red-400 px-2 py-0.5 rounded">
+            {prospect.disqualifyReason}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
       <div className="max-w-7xl mx-auto">
@@ -301,7 +391,10 @@ Geoff`;
         {/* Discover Section */}
         {showDiscover && (
           <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-800/50 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Discover New Leads</h2>
+            <h2 className="text-xl font-semibold mb-4">Discover Pre-Qualified Leads</h2>
+            <p className="text-sm text-gray-400 mb-4">
+              Finds brands running image ads, looks up decision-makers via Hunter.io, and filters for relevant titles.
+            </p>
 
             {/* Discovery Form */}
             <div className="flex gap-4 items-end flex-wrap mb-4">
@@ -320,14 +413,27 @@ Geoff`;
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Limit</label>
+                <label className="block text-sm text-gray-400 mb-1">Find</label>
                 <input
                   type="number"
                   value={discoverLimit}
-                  onChange={(e) => setDiscoverLimit(Math.min(20, parseInt(e.target.value) || 10))}
+                  onChange={(e) => setDiscoverLimit(Math.min(10, Math.max(1, parseInt(e.target.value) || 5)))}
                   className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
-                  max={20}
+                  min={1}
+                  max={10}
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="usUkOnly"
+                  checked={usUkOnly}
+                  onChange={(e) => setUsUkOnly(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
+                />
+                <label htmlFor="usUkOnly" className="text-sm text-gray-300">
+                  US/UK only
+                </label>
               </div>
               <button
                 onClick={discoverProspects}
@@ -338,16 +444,28 @@ Geoff`;
               </button>
             </div>
 
-            {/* Prospects List */}
-            {prospects.length > 0 && (
-              <div className="mt-4">
+            {discovering && (
+              <div className="flex items-center gap-3 text-gray-400">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
+                <span>Searching Foreplay + Hunter.io (this may take a moment)...</span>
+              </div>
+            )}
+
+            {/* Qualified Prospects */}
+            {qualifiedProspects.length > 0 && (
+              <div className="mt-6">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm text-gray-400">
-                    Found {prospects.length} prospects ({selectedProspects.size} selected)
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-medium text-green-400">
+                      {qualifiedProspects.length} Qualified
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      ({selectedProspects.size} selected)
+                    </span>
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={selectAllProspects}
+                      onClick={selectAllQualified}
                       className="text-sm text-purple-400 hover:text-purple-300"
                     >
                       Select All
@@ -362,36 +480,9 @@ Geoff`;
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-                  {prospects.map((prospect) => (
-                    <div
-                      key={prospect.domain}
-                      onClick={() => !prospect.alreadyLead && toggleProspect(prospect.domain)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        prospect.alreadyLead
-                          ? "bg-gray-800/50 border-gray-700 opacity-50 cursor-not-allowed"
-                          : selectedProspects.has(prospect.domain)
-                          ? "bg-purple-900/50 border-purple-600"
-                          : "bg-gray-800 border-gray-700 hover:border-gray-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        {prospect.avatar && (
-                          <img
-                            src={prospect.avatar}
-                            alt=""
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
-                        <div className="font-medium text-sm truncate">
-                          {prospect.brandName}
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">{prospect.domain}</div>
-                      {prospect.alreadyLead && (
-                        <div className="text-xs text-yellow-500 mt-1">Already added</div>
-                      )}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-4">
+                  {qualifiedProspects.map((prospect) => (
+                    <ProspectCard key={prospect.domain} prospect={prospect} isQualified={true} />
                   ))}
                 </div>
 
@@ -407,9 +498,43 @@ Geoff`;
               </div>
             )}
 
+            {/* Disqualified Prospects (collapsible) */}
+            {disqualifiedProspects.length > 0 && (
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowDisqualified(!showDisqualified)}
+                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300"
+                >
+                  <svg
+                    className={`w-4 h-4 transition-transform ${showDisqualified ? "rotate-90" : ""}`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  {disqualifiedProspects.length} Disqualified (click to {showDisqualified ? "hide" : "show"})
+                </button>
+
+                {showDisqualified && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-3">
+                    {disqualifiedProspects.map((prospect) => (
+                      <ProspectCard key={prospect.domain} prospect={prospect} isQualified={false} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* No results message */}
+            {!discovering && qualifiedProspects.length === 0 && disqualifiedProspects.length === 0 && (
+              <div className="text-gray-500 text-sm mt-4">
+                Click &quot;Find Prospects&quot; to discover brands in this niche.
+              </div>
+            )}
+
             {/* Batch Results */}
             {batchResults && (
-              <div className="mt-4 p-4 bg-gray-800/50 rounded-lg">
+              <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
                 <h3 className="font-medium mb-2">Batch Results</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                   <div>
