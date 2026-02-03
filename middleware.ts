@@ -22,6 +22,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/hunter/(.*)',
   '/api/report/(.*)',
   '/api/admin/(.*)',
+  '/api/analytics/(.*)',
   '/privacy',
   '/terms',
   '/success',
