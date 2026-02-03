@@ -112,21 +112,45 @@ export default async function PublicReportPage({
                   </div>
                   {/* Creative */}
                   <div className="relative aspect-square bg-zinc-800">
-                    <Image
-                      src={report.creative_url}
-                      alt={report.ad_name}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    {report_data.media_type === "video" && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        </div>
-                      </div>
+                    {report_data.media_type === "video" ? (
+                      // For videos: show thumbnail image with play overlay, or video player
+                      report.thumbnail_url ? (
+                        <>
+                          <Image
+                            src={report.thumbnail_url}
+                            alt={report.ad_name}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        // No thumbnail - show video player
+                        <video
+                          src={report.creative_url}
+                          className="w-full h-full object-cover"
+                          controls
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      )
+                    ) : (
+                      // For images: display directly
+                      <Image
+                        src={report.creative_url}
+                        alt={report.ad_name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
                     )}
                   </div>
                   {/* Engagement Bar */}

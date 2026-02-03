@@ -342,6 +342,7 @@ export interface PublicReport {
   };
   pdf_url: string | null;
   creative_url: string | null;
+  thumbnail_url: string | null;
   created_at: string;
 }
 
@@ -365,12 +366,13 @@ export async function savePublicReport(data: {
   reportData: PublicReport['report_data'];
   pdfUrl?: string;
   creativeUrl?: string;
+  thumbnailUrl?: string;
 }): Promise<PublicReport> {
   const slug = generateSlug(data.adName);
 
   const result = await getDb()`
     INSERT INTO public_reports (
-      slug, user_email, ad_name, overall_score, verdict, report_data, pdf_url, creative_url
+      slug, user_email, ad_name, overall_score, verdict, report_data, pdf_url, creative_url, thumbnail_url
     )
     VALUES (
       ${slug},
@@ -380,7 +382,8 @@ export async function savePublicReport(data: {
       ${data.verdict},
       ${JSON.stringify(data.reportData)}::jsonb,
       ${data.pdfUrl || null},
-      ${data.creativeUrl || null}
+      ${data.creativeUrl || null},
+      ${data.thumbnailUrl || null}
     )
     RETURNING *
   `;
@@ -409,4 +412,224 @@ export async function updatePublicReportPdfUrl(slug: string, pdfUrl: string): Pr
     SET pdf_url = ${pdfUrl}
     WHERE slug = ${slug}
   `;
+}
+
+// ==========================================
+// Brand Cache (for Foreplay optimization)
+// ==========================================
+
+export interface CachedBrand {
+  id: string;
+  domain: string;
+  brand_id: string;
+  brand_name: string;
+  cached_at: string;
+}
+
+// Get cached brand by domain
+export async function getCachedBrand(domain: string): Promise<CachedBrand | null> {
+  const result = await getDb()`
+    SELECT * FROM brand_cache
+    WHERE domain = ${domain.toLowerCase()}
+    AND cached_at > NOW() - INTERVAL '30 days'
+  `;
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  return result[0] as CachedBrand;
+}
+
+// Cache a brand lookup
+export async function cacheBrand(domain: string, brandId: string, brandName: string): Promise<void> {
+  await getDb()`
+    INSERT INTO brand_cache (domain, brand_id, brand_name)
+    VALUES (${domain.toLowerCase()}, ${brandId}, ${brandName})
+    ON CONFLICT (domain) DO UPDATE SET
+      brand_id = ${brandId},
+      brand_name = ${brandName},
+      cached_at = NOW()
+  `;
+}
+
+// Get recent report for a brand (within last N days)
+export async function getRecentReportForBrand(brandName: string, daysAgo: number = 14): Promise<PublicReport | null> {
+  const result = await getDb()`
+    SELECT * FROM public_reports
+    WHERE LOWER(ad_name) LIKE ${`%${brandName.toLowerCase()}%`}
+    AND created_at > NOW() - INTERVAL '1 day' * ${daysAgo}
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  return result[0] as PublicReport;
+}
+
+// ==========================================
+// Leads Tracking
+// ==========================================
+
+export type LeadStatus = 'new' | 'contacted' | 'replied' | 'converted' | 'not_interested';
+
+export interface Lead {
+  id: string;
+  domain: string;
+  brand_name: string | null;
+  report_url: string | null;
+  report_slug: string | null;
+  score: number | null;
+  verdict: string | null;
+  top_fix: string | null;
+  contact_name: string | null;
+  contact_title: string | null;
+  contact_email: string | null;
+  contact_linkedin: string | null;
+  status: LeadStatus;
+  notes: string | null;
+  created_at: string;
+  contacted_at: string | null;
+}
+
+// Save a new lead
+export async function saveLead(data: {
+  domain: string;
+  brandName?: string;
+  reportUrl?: string;
+  reportSlug?: string;
+  score?: number;
+  verdict?: string;
+  topFix?: string;
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
+  contactLinkedin?: string;
+}): Promise<Lead> {
+  const result = await getDb()`
+    INSERT INTO leads (
+      domain, brand_name, report_url, report_slug, score, verdict, top_fix,
+      contact_name, contact_title, contact_email, contact_linkedin
+    )
+    VALUES (
+      ${data.domain.toLowerCase()},
+      ${data.brandName || null},
+      ${data.reportUrl || null},
+      ${data.reportSlug || null},
+      ${data.score || null},
+      ${data.verdict || null},
+      ${data.topFix || null},
+      ${data.contactName || null},
+      ${data.contactTitle || null},
+      ${data.contactEmail || null},
+      ${data.contactLinkedin || null}
+    )
+    RETURNING *
+  `;
+
+  return result[0] as Lead;
+}
+
+// Get lead by domain (to avoid duplicates)
+export async function getLeadByDomain(domain: string): Promise<Lead | null> {
+  const result = await getDb()`
+    SELECT * FROM leads
+    WHERE domain = ${domain.toLowerCase()}
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  return result[0] as Lead;
+}
+
+// Get all leads with optional filters
+export async function getLeads(filters?: {
+  status?: LeadStatus;
+  minScore?: number;
+  maxScore?: number;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ leads: Lead[]; total: number }> {
+  const conditions: string[] = [];
+
+  // Build dynamic query based on filters
+  let query = getDb()`
+    SELECT * FROM leads
+    WHERE 1=1
+    ${filters?.status ? getDb()`AND status = ${filters.status}` : getDb()``}
+    ${filters?.minScore ? getDb()`AND score >= ${filters.minScore}` : getDb()``}
+    ${filters?.maxScore ? getDb()`AND score <= ${filters.maxScore}` : getDb()``}
+    ${filters?.startDate ? getDb()`AND created_at >= ${filters.startDate}::timestamp` : getDb()``}
+    ${filters?.endDate ? getDb()`AND created_at <= ${filters.endDate}::timestamp` : getDb()``}
+    ORDER BY created_at DESC
+    LIMIT ${filters?.limit || 100}
+    OFFSET ${filters?.offset || 0}
+  `;
+
+  const countQuery = getDb()`
+    SELECT COUNT(*) as count FROM leads
+    WHERE 1=1
+    ${filters?.status ? getDb()`AND status = ${filters.status}` : getDb()``}
+    ${filters?.minScore ? getDb()`AND score >= ${filters.minScore}` : getDb()``}
+    ${filters?.maxScore ? getDb()`AND score <= ${filters.maxScore}` : getDb()``}
+    ${filters?.startDate ? getDb()`AND created_at >= ${filters.startDate}::timestamp` : getDb()``}
+    ${filters?.endDate ? getDb()`AND created_at <= ${filters.endDate}::timestamp` : getDb()``}
+  `;
+
+  const [leads, countResult] = await Promise.all([query, countQuery]);
+
+  return {
+    leads: leads as Lead[],
+    total: parseInt((countResult[0] as { count: string }).count, 10),
+  };
+}
+
+// Update lead status
+export async function updateLeadStatus(
+  leadId: string,
+  status: LeadStatus,
+  notes?: string
+): Promise<Lead | null> {
+  const result = await getDb()`
+    UPDATE leads
+    SET
+      status = ${status},
+      notes = COALESCE(${notes || null}, notes),
+      contacted_at = ${status === 'contacted' ? getDb()`NOW()` : getDb()`contacted_at`}
+    WHERE id = ${leadId}::uuid
+    RETURNING *
+  `;
+
+  if (result.length === 0) {
+    return null;
+  }
+
+  return result[0] as Lead;
+}
+
+// Get all leads for CSV export (no pagination)
+export async function getAllLeadsForExport(filters?: {
+  status?: LeadStatus;
+  minScore?: number;
+  maxScore?: number;
+}): Promise<Lead[]> {
+  const result = await getDb()`
+    SELECT * FROM leads
+    WHERE 1=1
+    ${filters?.status ? getDb()`AND status = ${filters.status}` : getDb()``}
+    ${filters?.minScore ? getDb()`AND score >= ${filters.minScore}` : getDb()``}
+    ${filters?.maxScore ? getDb()`AND score <= ${filters.maxScore}` : getDb()``}
+    ORDER BY created_at DESC
+  `;
+
+  return result as Lead[];
 }

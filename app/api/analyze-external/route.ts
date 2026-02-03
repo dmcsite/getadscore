@@ -96,11 +96,12 @@ async function scoreCreative(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { foreplayAdId, creativeUrl, brandName, adCopy, userEmail } = body;
+    const { foreplayAdId, creativeUrl, brandName, adCopy, userEmail, thumbnailUrl } = body;
 
     let finalCreativeUrl = creativeUrl;
     let finalBrandName = brandName;
     let finalAdCopy = adCopy;
+    let finalThumbnailUrl = thumbnailUrl;
     let transcript: string | undefined;
 
     // If foreplayAdId is provided, fetch ad details from Foreplay
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
       finalCreativeUrl = ad.creativeUrl;
       finalBrandName = brandName || ad.brandName;
       finalAdCopy = adCopy || ad.adCopy;
+      finalThumbnailUrl = thumbnailUrl || ad.thumbnail;
       transcript = ad.transcript;
     }
 
@@ -145,7 +147,12 @@ export async function POST(request: NextRequest) {
     // Generate ad name
     const adName = finalBrandName || `${scoreResult.mediaType === "video" ? "Video" : "Image"} Ad Analysis`;
 
-    // Save the report with creative URL
+    // For videos, use thumbnail if available; otherwise use video URL
+    // For images, creative URL works directly
+    const isVideo = scoreResult.mediaType === "video";
+    const displayUrl = isVideo && finalThumbnailUrl ? finalThumbnailUrl : finalCreativeUrl;
+
+    // Save the report with creative URL and thumbnail
     const report = await savePublicReport({
       userEmail: userEmail || null,
       adName,
@@ -170,6 +177,7 @@ export async function POST(request: NextRequest) {
         transcript: transcript || scoreResult.transcript,
       },
       creativeUrl: finalCreativeUrl,
+      thumbnailUrl: finalThumbnailUrl,
     });
 
     return NextResponse.json({

@@ -224,3 +224,104 @@ export async function downloadCreative(url: string): Promise<{ buffer: Buffer; c
 
   return { buffer, contentType };
 }
+
+// Brand with metadata for prospecting
+export interface ForeplayBrand {
+  id: string;
+  name: string;
+  avatar?: string;
+  websites?: string[];
+  ad_count?: number;
+  niches?: string[];
+  category?: string;
+}
+
+// Discover brands via Discovery Ads API
+// Returns real DTC brands with their ads and domains
+export async function discoverBrands(
+  options: {
+    query?: string;
+    niches?: string[];
+    limit?: number;
+  }
+): Promise<ForeplayBrand[]> {
+  // Use niche as query for better results
+  const query = options.query || options.niches?.[0] || "ecommerce";
+
+  const params: Record<string, string | string[] | number> = {
+    query,
+    limit: Math.min((options.limit || 10) * 2, 20), // Fetch more to get unique brands
+    order: "newest",
+  };
+
+  // Discovery Ads API returns ads with brand info and link URLs
+  const response = await foreplayFetch<{
+    data: Array<{
+      id: string;
+      brand_id?: string;
+      name?: string;
+      avatar?: string;
+      link_url?: string;
+      niches?: string[];
+    }>;
+  }>("/api/discovery/ads", params);
+
+  // Extract unique brands from ads, using link_url for domain
+  const brandMap = new Map<string, ForeplayBrand>();
+
+  for (const ad of response.data || []) {
+    if (ad.brand_id && ad.name && !brandMap.has(ad.brand_id)) {
+      // Extract domain from link_url
+      let websites: string[] = [];
+      if (ad.link_url) {
+        try {
+          const url = new URL(ad.link_url);
+          websites = [url.origin];
+        } catch {
+          // Invalid URL, skip
+        }
+      }
+
+      brandMap.set(ad.brand_id, {
+        id: ad.brand_id,
+        name: ad.name,
+        avatar: ad.avatar,
+        websites,
+        niches: ad.niches,
+      });
+    }
+  }
+
+  return Array.from(brandMap.values()).slice(0, options.limit || 10);
+}
+
+// Get brand details including website/domain
+export async function getBrandDetails(brandId: string): Promise<ForeplayBrand | null> {
+  try {
+    const response = await foreplayFetch<{
+      data: ForeplayBrand;
+    }>("/api/brand", { brand_id: brandId });
+
+    return response.data || null;
+  } catch {
+    return null;
+  }
+}
+
+// Extract domain from brand websites
+export function extractDomainFromBrand(brand: ForeplayBrand): string | null {
+  if (!brand.websites || brand.websites.length === 0) {
+    return null;
+  }
+
+  try {
+    const url = brand.websites[0];
+    const domain = url
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0];
+    return domain;
+  } catch {
+    return null;
+  }
+}
