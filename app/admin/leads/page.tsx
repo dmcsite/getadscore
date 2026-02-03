@@ -9,6 +9,7 @@ interface Lead {
   domain: string;
   brand_name: string | null;
   report_url: string | null;
+  report_slug: string | null;
   score: number | null;
   verdict: string | null;
   top_fix: string | null;
@@ -102,6 +103,7 @@ export default function LeadsPage() {
     maxScore: "",
   });
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
 
   // Delete state
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
@@ -147,6 +149,25 @@ export default function LeadsPage() {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  // Fetch view counts when leads change
+  useEffect(() => {
+    const fetchViewCounts = async () => {
+      try {
+        const response = await fetch("/api/analytics/views?forLeads=true");
+        const data = await response.json();
+        if (data.success) {
+          setViewCounts(data.counts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch view counts:", error);
+      }
+    };
+
+    if (leads.length > 0) {
+      fetchViewCounts();
+    }
+  }, [leads]);
 
   const discoverProspects = async () => {
     setDiscovering(true);
@@ -756,6 +777,7 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                   </th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Brand</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Score</th>
+                  <th className="px-4 py-3 text-sm font-medium text-gray-400">Views</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Contact</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Status</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Created</th>
@@ -765,13 +787,13 @@ PS - Reply "stop" if you'd rather not hear from me.`;
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       Loading...
                     </td>
                   </tr>
                 ) : leads.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       No leads found. Use Discover Leads to find prospects.
                     </td>
                   </tr>
@@ -812,6 +834,19 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                           </div>
                         ) : (
                           <span className="text-gray-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {lead.report_slug && viewCounts[lead.report_slug] ? (
+                          <div className="flex items-center gap-1 text-sm">
+                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span className="text-purple-400 font-medium">{viewCounts[lead.report_slug]}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-600">0</span>
                         )}
                       </td>
                       <td className="px-4 py-3">

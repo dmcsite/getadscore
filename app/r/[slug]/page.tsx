@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublicReportBySlug } from "@/lib/db";
 import Link from "next/link";
+import ViewTracker from "./ViewTracker";
 
 // Category display names and order
 const CATEGORY_ORDER = [
@@ -57,6 +58,9 @@ export default async function PublicReportPage({
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-zinc-100">
+      {/* Track view */}
+      <ViewTracker slug={slug} />
+
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

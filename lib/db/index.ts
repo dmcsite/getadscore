@@ -654,3 +654,75 @@ export async function deleteLeads(leadIds: string[]): Promise<number> {
   `;
   return leadIds.length;
 }
+
+// ==========================================
+// Report Views Analytics
+// ==========================================
+
+export interface ReportView {
+  id: string;
+  report_slug: string;
+  referrer: string | null;
+  user_agent: string | null;
+  ip_hash: string | null;
+  viewed_at: string;
+}
+
+// Log a report view
+export async function logReportView(data: {
+  slug: string;
+  referrer?: string;
+  userAgent?: string;
+  ipHash?: string;
+}): Promise<void> {
+  await getDb()`
+    INSERT INTO report_views (report_slug, referrer, user_agent, ip_hash)
+    VALUES (${data.slug}, ${data.referrer || null}, ${data.userAgent || null}, ${data.ipHash || null})
+  `;
+}
+
+// Get view count for a single report
+export async function getReportViewCount(slug: string): Promise<number> {
+  const result = await getDb()`
+    SELECT COUNT(*) as count FROM report_views
+    WHERE report_slug = ${slug}
+  `;
+  return parseInt((result[0] as { count: string }).count, 10);
+}
+
+// Get view counts for multiple reports (by slug)
+export async function getReportViewCounts(slugs: string[]): Promise<Record<string, number>> {
+  if (slugs.length === 0) return {};
+
+  const result = await getDb()`
+    SELECT report_slug, COUNT(*) as count
+    FROM report_views
+    WHERE report_slug = ANY(${slugs})
+    GROUP BY report_slug
+  `;
+
+  const counts: Record<string, number> = {};
+  for (const row of result as { report_slug: string; count: string }[]) {
+    counts[row.report_slug] = parseInt(row.count, 10);
+  }
+  return counts;
+}
+
+// Get view counts for leads (by report_slug from leads table)
+export async function getViewCountsForLeads(): Promise<Record<string, number>> {
+  const result = await getDb()`
+    SELECT l.report_slug, COUNT(rv.id) as count
+    FROM leads l
+    LEFT JOIN report_views rv ON rv.report_slug = l.report_slug
+    WHERE l.report_slug IS NOT NULL
+    GROUP BY l.report_slug
+  `;
+
+  const counts: Record<string, number> = {};
+  for (const row of result as { report_slug: string; count: string }[]) {
+    if (row.report_slug) {
+      counts[row.report_slug] = parseInt(row.count, 10);
+    }
+  }
+  return counts;
+}

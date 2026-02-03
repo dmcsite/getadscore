@@ -43,3 +43,17 @@ CREATE INDEX IF NOT EXISTS idx_reports_expiry ON reports(expires_at);
 -- free: 10 requests/day
 -- individual: 100 requests/day
 -- agency: 500 requests/day
+
+-- Report Views table (analytics)
+CREATE TABLE IF NOT EXISTS report_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_slug VARCHAR(100) NOT NULL,
+  referrer TEXT,
+  user_agent TEXT,
+  ip_hash VARCHAR(16),  -- Hashed for privacy
+  viewed_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for report views
+CREATE INDEX IF NOT EXISTS idx_report_views_slug ON report_views(report_slug);
+CREATE INDEX IF NOT EXISTS idx_report_views_viewed_at ON report_views(viewed_at);
