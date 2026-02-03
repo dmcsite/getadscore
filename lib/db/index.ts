@@ -633,3 +633,24 @@ export async function getAllLeadsForExport(filters?: {
 
   return result as Lead[];
 }
+
+// Delete a single lead
+export async function deleteLead(leadId: string): Promise<boolean> {
+  const result = await getDb()`
+    DELETE FROM leads
+    WHERE id = ${leadId}
+    RETURNING id
+  `;
+  return result.length > 0;
+}
+
+// Delete multiple leads
+export async function deleteLeads(leadIds: string[]): Promise<number> {
+  if (leadIds.length === 0) return 0;
+
+  await getDb()`
+    DELETE FROM leads
+    WHERE id = ANY(${leadIds}::uuid[])
+  `;
+  return leadIds.length;
+}

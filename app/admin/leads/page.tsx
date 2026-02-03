@@ -103,6 +103,10 @@ export default function LeadsPage() {
   });
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Delete state
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+
   // Discover state
   const [showDiscover, setShowDiscover] = useState(false);
   const [discoverNiche, setDiscoverNiche] = useState("beauty");
@@ -242,6 +246,74 @@ export default function LeadsPage() {
     } catch (error) {
       console.error("Failed to update status:", error);
     }
+  };
+
+  const deleteSingleLead = async (leadId: string, brandName: string) => {
+    if (!confirm(`Delete lead "${brandName}"?`)) return;
+
+    try {
+      const response = await fetch("/api/leads", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId }),
+      });
+
+      if (response.ok) {
+        setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
+        setTotal((prev) => prev - 1);
+        setSelectedLeads((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(leadId);
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to delete lead:", error);
+    }
+  };
+
+  const deleteSelectedLeads = async () => {
+    if (selectedLeads.size === 0) return;
+    if (!confirm(`Delete ${selectedLeads.size} selected lead${selectedLeads.size > 1 ? "s" : ""}?`)) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch("/api/leads", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadIds: Array.from(selectedLeads) }),
+      });
+
+      if (response.ok) {
+        setLeads((prev) => prev.filter((lead) => !selectedLeads.has(lead.id)));
+        setTotal((prev) => prev - selectedLeads.size);
+        setSelectedLeads(new Set());
+      }
+    } catch (error) {
+      console.error("Failed to delete leads:", error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const toggleLeadSelection = (leadId: string) => {
+    setSelectedLeads((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(leadId)) {
+        newSet.delete(leadId);
+      } else {
+        newSet.add(leadId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllLeads = () => {
+    setSelectedLeads(new Set(leads.map((l) => l.id)));
+  };
+
+  const deselectAllLeads = () => {
+    setSelectedLeads(new Set());
   };
 
   const copyEmail = (lead: Lead) => {
@@ -640,12 +712,47 @@ Geoff`;
           </button>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedLeads.size > 0 && (
+          <div className="bg-red-900/30 border border-red-800/50 rounded-lg p-4 mb-4 flex items-center justify-between">
+            <div className="text-sm">
+              <span className="font-medium">{selectedLeads.size}</span> lead{selectedLeads.size > 1 ? "s" : ""} selected
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={deselectAllLeads}
+                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white"
+              >
+                Deselect All
+              </button>
+              <button
+                onClick={deleteSelectedLeads}
+                disabled={deleting}
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {deleting ? "Deleting..." : "Delete Selected"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div className="bg-gray-900 rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800 text-left">
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={leads.length > 0 && selectedLeads.size === leads.length}
+                      onChange={(e) => e.target.checked ? selectAllLeads() : deselectAllLeads()}
+                      className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-red-600 focus:ring-red-500"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Brand</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Score</th>
                   <th className="px-4 py-3 text-sm font-medium text-gray-400">Contact</th>
@@ -657,19 +764,27 @@ Geoff`;
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                       Loading...
                     </td>
                   </tr>
                 ) : leads.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                       No leads found. Use Discover Leads to find prospects.
                     </td>
                   </tr>
                 ) : (
                   leads.map((lead) => (
-                    <tr key={lead.id} className="border-b border-gray-800 hover:bg-gray-800/50">
+                    <tr key={lead.id} className={`border-b border-gray-800 hover:bg-gray-800/50 ${selectedLeads.has(lead.id) ? "bg-red-900/10" : ""}`}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.has(lead.id)}
+                          onChange={() => toggleLeadSelection(lead.id)}
+                          className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-red-600 focus:ring-red-500"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div>
                           <div className="font-medium">{lead.brand_name || lead.domain}</div>
@@ -760,6 +875,15 @@ Geoff`;
                               LinkedIn
                             </a>
                           )}
+                          <button
+                            onClick={() => deleteSingleLead(lead.id, lead.brand_name || lead.domain)}
+                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-900/30 rounded transition-colors"
+                            title="Delete lead"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>

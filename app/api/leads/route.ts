@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLeads, updateLeadStatus, getAllLeadsForExport, LeadStatus } from "@/lib/db";
+import { getLeads, updateLeadStatus, deleteLead, deleteLeads, LeadStatus } from "@/lib/db";
 
 // GET /api/leads - List leads with optional filters
 export async function GET(request: NextRequest) {
@@ -72,6 +72,49 @@ export async function PATCH(request: NextRequest) {
     console.error("Update lead error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update lead" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/leads - Delete one or multiple leads
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { leadId, leadIds } = body;
+
+    // Single delete
+    if (leadId) {
+      const deleted = await deleteLead(leadId);
+      if (!deleted) {
+        return NextResponse.json(
+          { error: "Lead not found" },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        deleted: 1,
+      });
+    }
+
+    // Bulk delete
+    if (leadIds && Array.isArray(leadIds) && leadIds.length > 0) {
+      const deleted = await deleteLeads(leadIds);
+      return NextResponse.json({
+        success: true,
+        deleted,
+      });
+    }
+
+    return NextResponse.json(
+      { error: "leadId or leadIds is required" },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("Delete lead error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete lead" },
       { status: 500 }
     );
   }
