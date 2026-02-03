@@ -290,7 +290,7 @@ Geoff`;
                       {step.error && (
                         <p className="text-red-400 text-sm mt-1">{step.error}</p>
                       )}
-                      {step.data && (
+                      {step.data !== undefined && (
                         <p className="text-gray-400 text-sm mt-1">
                           {JSON.stringify(step.data)}
                         </p>
