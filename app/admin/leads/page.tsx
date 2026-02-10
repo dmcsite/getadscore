@@ -67,7 +67,7 @@ interface ApolloResult {
   domain: string;
   name: string;
   email: string;
-  status: "qualified" | "no_ads" | "exists" | "error";
+  status: "qualified" | "no_ads" | "ads_found" | "exists" | "error";
   brand?: string;
   score?: number;
   verdict?: string;
@@ -957,12 +957,18 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-green-400">
                       {apolloResults.filter((r) => r.status === "qualified").length}
                     </div>
-                    <div className="text-xs text-gray-500">Qualified (has ads)</div>
+                    <div className="text-xs text-gray-500">Scored</div>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-orange-400">
+                      {apolloResults.filter((r) => r.status === "ads_found").length}
+                    </div>
+                    <div className="text-xs text-gray-500">Ads Found (pending)</div>
                   </div>
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-yellow-400">
@@ -991,6 +997,8 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                       className={`flex items-center justify-between p-2 rounded text-sm ${
                         result.status === "qualified"
                           ? "bg-green-900/30"
+                          : result.status === "ads_found"
+                          ? "bg-orange-900/30"
                           : result.status === "no_ads"
                           ? "bg-yellow-900/30"
                           : result.status === "exists"
@@ -1009,13 +1017,16 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                         <span className={`text-xs px-2 py-0.5 rounded ${
                           result.status === "qualified"
                             ? "bg-green-800 text-green-300"
+                            : result.status === "ads_found"
+                            ? "bg-orange-800 text-orange-300"
                             : result.status === "no_ads"
                             ? "bg-yellow-800 text-yellow-300"
                             : result.status === "exists"
                             ? "bg-blue-800 text-blue-300"
                             : "bg-red-800 text-red-300"
                         }`}>
-                          {result.status === "qualified" ? "Qualified" :
+                          {result.status === "qualified" ? "Scored" :
+                           result.status === "ads_found" ? "Ads Found" :
                            result.status === "no_ads" ? "No Ads" :
                            result.status === "exists" ? "Exists" : "Error"}
                         </span>

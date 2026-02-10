@@ -22,7 +22,7 @@ interface ProcessResult {
   domain: string;
   name: string;
   email: string;
-  status: "qualified" | "no_ads" | "exists" | "error";
+  status: "qualified" | "no_ads" | "ads_found" | "exists" | "error";
   brand?: string;
   score?: number;
   verdict?: string;
@@ -116,13 +116,23 @@ async function processContact(contact: ApolloContact): Promise<ProcessResult> {
     }
 
     // Analyze ad if no cached report
+    let analysisAttempted = false;
+    let analysisError: string | null = null;
+
     if (!reportUrl) {
+      analysisAttempted = true;
       const analyzeUrl =
         process.env.NODE_ENV === "production"
           ? "https://www.getadscore.com/api/analyze-external"
           : "http://localhost:3000/api/analyze-external";
 
+      console.log(`[${cleanDomain}] Starting analysis of: ${ads[0].creativeUrl}`);
+
       try {
+        // Add AbortController for timeout (3 minutes for video processing)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+
         const analyzeResponse = await fetch(analyzeUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -132,10 +142,15 @@ async function processContact(contact: ApolloContact): Promise<ProcessResult> {
             adCopy: ads[0].adCopy,
             thumbnailUrl: ads[0].thumbnail,
           }),
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
+        console.log(`[${cleanDomain}] Analysis response status: ${analyzeResponse.status}`);
 
         if (analyzeResponse.ok) {
           const analyzeData = await analyzeResponse.json();
+          console.log(`[${cleanDomain}] Analysis success - score: ${analyzeData.score}`);
           reportUrl = analyzeData.reportUrl;
           slug = analyzeData.slug;
           score = analyzeData.score;
@@ -156,16 +171,36 @@ async function processContact(contact: ApolloContact): Promise<ProcessResult> {
           }
         } else {
           // Log the error but continue - we'll save as a lead without a score
-          const errorData = await analyzeResponse.json().catch(() => ({}));
-          console.error(`Analysis failed for ${cleanDomain}:`, errorData.error || analyzeResponse.status);
+          const errorText = await analyzeResponse.text();
+          let errorData: { error?: string; details?: string } = {};
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText.substring(0, 200) };
+          }
+          analysisError = errorData.error || `HTTP ${analyzeResponse.status}`;
+          console.error(`[${cleanDomain}] Analysis failed (${analyzeResponse.status}):`, errorData.error || errorText.substring(0, 500));
+          if (errorData.details) {
+            console.error(`[${cleanDomain}] Analysis details:`, errorData.details.substring(0, 500));
+          }
         }
       } catch (analyzeError) {
-        console.error(`Analysis error for ${cleanDomain}:`, analyzeError);
-        // Continue without score
+        if (analyzeError instanceof Error && analyzeError.name === 'AbortError') {
+          analysisError = 'Analysis timed out after 3 minutes';
+          console.error(`[${cleanDomain}] Analysis timed out`);
+        } else {
+          analysisError = analyzeError instanceof Error ? analyzeError.message : 'Unknown error';
+          console.error(`[${cleanDomain}] Analysis error:`, analyzeError);
+        }
       }
     }
 
-    // Save qualified lead with contact info from Apollo
+    // Determine final status:
+    // - "qualified" = has score and report
+    // - "ads_found" = has ads but analysis failed or pending
+    const finalStatus: "qualified" | "ads_found" = score ? "qualified" : "ads_found";
+
+    // Save lead with contact info from Apollo
     const lead = await saveLead({
       domain: cleanDomain,
       brandName: brandName || contact.company || undefined,
@@ -179,16 +214,19 @@ async function processContact(contact: ApolloContact): Promise<ProcessResult> {
       contactEmail: contact.email,
     });
 
+    console.log(`[${cleanDomain}] Saved lead - status: ${finalStatus}, score: ${score || 'none'}`);
+
     return {
       domain: cleanDomain,
       name: contact.name,
       email: contact.email,
-      status: "qualified",
+      status: finalStatus,
       brand: brandName || contact.company || undefined,
       score: score || undefined,
       verdict: verdict || undefined,
       reportUrl: reportUrl || undefined,
       leadId: lead.id,
+      error: analysisError || undefined,
     };
   } catch (error) {
     return {
@@ -254,6 +292,7 @@ export async function POST(request: NextRequest) {
     const summary = {
       total: results.length,
       qualified: results.filter((r) => r.status === "qualified").length,
+      ads_found: results.filter((r) => r.status === "ads_found").length,
       no_ads: results.filter((r) => r.status === "no_ads").length,
       exists: results.filter((r) => r.status === "exists").length,
       errors: results.filter((r) => r.status === "error").length,

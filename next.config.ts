@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
     "@ffmpeg-installer/ffmpeg",
     "@ffprobe-installer/ffprobe",
   ],
+  experimental: {
+    // Allow larger video uploads (up to 50MB) through middleware
+    middlewareClientMaxBodySize: "50mb",
+  },
 };
 
 export default nextConfig;
