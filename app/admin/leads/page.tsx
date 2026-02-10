@@ -55,6 +55,27 @@ interface BatchResult {
   skipReason?: string;
 }
 
+interface ApolloContact {
+  name: string;
+  email: string;
+  title?: string;
+  company?: string;
+  domain: string;
+}
+
+interface ApolloResult {
+  domain: string;
+  name: string;
+  email: string;
+  status: "qualified" | "no_ads" | "exists" | "error";
+  brand?: string;
+  score?: number;
+  verdict?: string;
+  reportUrl?: string;
+  leadId?: string;
+  error?: string;
+}
+
 // Valid Foreplay niches
 const NICHES = [
   { value: "beauty", label: "Beauty" },
@@ -121,6 +142,13 @@ export default function LeadsPage() {
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
   const [batchResults, setBatchResults] = useState<BatchResult[] | null>(null);
+
+  // Apollo import state
+  const [showApolloImport, setShowApolloImport] = useState(false);
+  const [apolloContacts, setApolloContacts] = useState<ApolloContact[]>([]);
+  const [apolloProcessing, setApolloProcessing] = useState(false);
+  const [apolloProgress, setApolloProgress] = useState({ current: 0, total: 0 });
+  const [apolloResults, setApolloResults] = useState<ApolloResult[] | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -372,6 +400,128 @@ PS - Reply "stop" if you'd rather not hear from me.`;
     window.location.href = `/api/leads/export?${params}`;
   };
 
+  const exportForInstantly = () => {
+    window.location.href = `/api/leads/export-instantly`;
+  };
+
+  // Parse Apollo CSV file
+  const handleApolloCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split("\n").filter((line) => line.trim());
+
+      if (lines.length < 2) {
+        alert("CSV file is empty or has no data rows");
+        return;
+      }
+
+      // Parse header row
+      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+
+      // Find column indices
+      const nameIdx = headers.findIndex((h) => h === "name" || h === "full name" || h === "contact name");
+      const emailIdx = headers.findIndex((h) => h === "email" || h === "contact email" || h === "work email");
+      const titleIdx = headers.findIndex((h) => h === "title" || h === "job title" || h === "position");
+      const companyIdx = headers.findIndex((h) => h === "company" || h === "company name" || h === "organization");
+      const domainIdx = headers.findIndex((h) => h === "domain" || h === "website" || h === "company domain");
+
+      if (emailIdx === -1) {
+        alert("CSV must have an 'email' column");
+        return;
+      }
+
+      // Parse data rows
+      const contacts: ApolloContact[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        // Handle quoted CSV values
+        const values: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (const char of lines[i]) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            values.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim());
+
+        const email = values[emailIdx]?.replace(/"/g, "");
+        if (!email || !email.includes("@")) continue;
+
+        // Extract domain from email if no domain column
+        let domain = domainIdx >= 0 ? values[domainIdx]?.replace(/"/g, "") : "";
+        if (!domain) {
+          domain = email.split("@")[1];
+        }
+        domain = domain?.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+
+        if (!domain) continue;
+
+        contacts.push({
+          name: nameIdx >= 0 ? values[nameIdx]?.replace(/"/g, "") || email.split("@")[0] : email.split("@")[0],
+          email,
+          title: titleIdx >= 0 ? values[titleIdx]?.replace(/"/g, "") : undefined,
+          company: companyIdx >= 0 ? values[companyIdx]?.replace(/"/g, "") : undefined,
+          domain,
+        });
+      }
+
+      if (contacts.length === 0) {
+        alert("No valid contacts found in CSV");
+        return;
+      }
+
+      setApolloContacts(contacts);
+      setApolloResults(null);
+    };
+
+    reader.readAsText(file);
+  };
+
+  // Process Apollo contacts
+  const processApolloContacts = async () => {
+    if (apolloContacts.length === 0) return;
+
+    setApolloProcessing(true);
+    setApolloProgress({ current: 0, total: apolloContacts.length });
+    setApolloResults(null);
+
+    try {
+      const response = await fetch("/api/prospect/from-apollo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contacts: apolloContacts }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setApolloResults(data.results);
+        fetchLeads(); // Refresh leads list
+      } else {
+        alert(data.error || "Failed to process contacts");
+      }
+    } catch (error) {
+      console.error("Apollo import error:", error);
+      alert("Failed to process contacts");
+    } finally {
+      setApolloProcessing(false);
+    }
+  };
+
+  const clearApolloImport = () => {
+    setApolloContacts([]);
+    setApolloResults(null);
+  };
+
   const totalPages = Math.ceil(total / 50);
 
   const ProspectCard = ({ prospect, isQualified }: { prospect: Prospect; isQualified: boolean }) => (
@@ -456,7 +606,7 @@ PS - Reply "stop" if you'd rather not hear from me.`;
             <h1 className="text-3xl font-bold">Leads</h1>
             <p className="text-gray-400">{total} total leads</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={() => setShowDiscover(!showDiscover)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -467,12 +617,28 @@ PS - Reply "stop" if you'd rather not hear from me.`;
             >
               {showDiscover ? "Hide Discovery" : "Discover Leads"}
             </button>
+            <button
+              onClick={() => setShowApolloImport(!showApolloImport)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showApolloImport
+                  ? "bg-orange-600 hover:bg-orange-700"
+                  : "bg-orange-600/20 text-orange-400 hover:bg-orange-600/30"
+              }`}
+            >
+              {showApolloImport ? "Hide Apollo Import" : "Import from Apollo"}
+            </button>
             <a
               href="/admin/pipeline"
               className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
               Single Pipeline
             </a>
+            <button
+              onClick={exportForInstantly}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
+            >
+              Export for Instantly
+            </button>
             <button
               onClick={exportCSV}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium transition-colors"
@@ -670,6 +836,191 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                     >
                       {r.domain}: {r.success ? (r.skipped ? "skipped" : `${r.score}`) : "failed"}
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Apollo Import Section */}
+        {showApolloImport && (
+          <div className="bg-gradient-to-r from-orange-900/30 to-yellow-900/30 border border-orange-800/50 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-2">Import from Apollo</h2>
+            <p className="text-sm text-gray-400 mb-4">
+              Upload a CSV of contacts from Apollo. We&apos;ll check if they run ads and score their creatives.
+            </p>
+
+            {/* CSV Upload */}
+            {apolloContacts.length === 0 && !apolloResults && (
+              <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleApolloCSV}
+                  className="hidden"
+                  id="apollo-csv-input"
+                />
+                <label
+                  htmlFor="apollo-csv-input"
+                  className="cursor-pointer flex flex-col items-center gap-3"
+                >
+                  <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span className="text-gray-400">
+                    <span className="text-orange-400 hover:text-orange-300">Click to upload</span> Apollo CSV
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Required columns: email, domain (or will extract from email)
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Preview Contacts */}
+            {apolloContacts.length > 0 && !apolloResults && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-lg font-medium">
+                    {apolloContacts.length} contacts ready to process
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={clearApolloImport}
+                      className="px-3 py-1.5 text-sm text-gray-400 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={processApolloContacts}
+                      disabled={apolloProcessing}
+                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-700 rounded-lg font-medium transition-colors"
+                    >
+                      {apolloProcessing
+                        ? `Processing ${apolloProgress.current}/${apolloProgress.total}...`
+                        : "Process All"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-800 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-gray-400">Name</th>
+                        <th className="px-3 py-2 text-left text-gray-400">Email</th>
+                        <th className="px-3 py-2 text-left text-gray-400">Title</th>
+                        <th className="px-3 py-2 text-left text-gray-400">Company</th>
+                        <th className="px-3 py-2 text-left text-gray-400">Domain</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {apolloContacts.slice(0, 20).map((contact, idx) => (
+                        <tr key={idx} className="border-t border-gray-700">
+                          <td className="px-3 py-2">{contact.name}</td>
+                          <td className="px-3 py-2 text-gray-400">{contact.email}</td>
+                          <td className="px-3 py-2 text-gray-500">{contact.title || "-"}</td>
+                          <td className="px-3 py-2 text-gray-500">{contact.company || "-"}</td>
+                          <td className="px-3 py-2 text-gray-500">{contact.domain}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {apolloContacts.length > 20 && (
+                    <div className="px-3 py-2 text-center text-gray-500 text-sm bg-gray-800">
+                      ... and {apolloContacts.length - 20} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Processing Progress */}
+            {apolloProcessing && (
+              <div className="flex items-center gap-3 text-gray-400 mt-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
+                <span>Processing contacts (this may take a few minutes)...</span>
+              </div>
+            )}
+
+            {/* Results */}
+            {apolloResults && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium">Import Results</h3>
+                  <button
+                    onClick={clearApolloImport}
+                    className="text-sm text-gray-400 hover:text-white"
+                  >
+                    Clear & Import More
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-green-400">
+                      {apolloResults.filter((r) => r.status === "qualified").length}
+                    </div>
+                    <div className="text-xs text-gray-500">Qualified (has ads)</div>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {apolloResults.filter((r) => r.status === "no_ads").length}
+                    </div>
+                    <div className="text-xs text-gray-500">No Ads Found</div>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {apolloResults.filter((r) => r.status === "exists").length}
+                    </div>
+                    <div className="text-xs text-gray-500">Already Exists</div>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-red-400">
+                      {apolloResults.filter((r) => r.status === "error").length}
+                    </div>
+                    <div className="text-xs text-gray-500">Errors</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {apolloResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center justify-between p-2 rounded text-sm ${
+                        result.status === "qualified"
+                          ? "bg-green-900/30"
+                          : result.status === "no_ads"
+                          ? "bg-yellow-900/30"
+                          : result.status === "exists"
+                          ? "bg-blue-900/30"
+                          : "bg-red-900/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{result.name}</span>
+                        <span className="text-gray-500">{result.domain}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {result.score && (
+                          <span className="text-green-400 font-medium">{result.score}/100</span>
+                        )}
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          result.status === "qualified"
+                            ? "bg-green-800 text-green-300"
+                            : result.status === "no_ads"
+                            ? "bg-yellow-800 text-yellow-300"
+                            : result.status === "exists"
+                            ? "bg-blue-800 text-blue-300"
+                            : "bg-red-800 text-red-300"
+                        }`}>
+                          {result.status === "qualified" ? "Qualified" :
+                           result.status === "no_ads" ? "No Ads" :
+                           result.status === "exists" ? "Exists" : "Error"}
+                        </span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

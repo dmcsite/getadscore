@@ -11,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/leads',
   '/api/leads/(.*)',
   '/api/prospect/(.*)',
+  '/api/leads/export-instantly',
   '/api/webhook/stripe',
   '/api/sample-report',
   '/api/score',
