@@ -152,6 +152,17 @@ export default async function PublicReportPage({
                       />
                     )}
                   </div>
+                  {/* Ad Copy Text - shown inside the feed mockup */}
+                  {report_data.ad_copy && (
+                    <div className="p-3 border-t border-zinc-800">
+                      <p className="text-sm text-zinc-300 whitespace-pre-wrap line-clamp-4">
+                        {report_data.ad_copy}
+                      </p>
+                      {report_data.ad_copy.length > 200 && (
+                        <p className="text-xs text-zinc-500 mt-1">See more</p>
+                      )}
+                    </div>
+                  )}
                   {/* Engagement Bar */}
                   <div className="p-3 flex items-center justify-between text-zinc-500 text-xs border-t border-zinc-800">
                     <div className="flex items-center gap-4">
@@ -214,6 +225,19 @@ export default async function PublicReportPage({
           </span>
           </div>
         </div>
+
+        {/* Ad Copy Section - Full text for when there's no creative or for expanded view */}
+        {report_data.ad_copy && !report.creative_url && (
+          <div className="mb-12 p-6 rounded-xl bg-zinc-900/50 border border-zinc-800">
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h2 className="text-lg font-semibold">Ad Copy Analyzed</h2>
+            </div>
+            <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed">{report_data.ad_copy}</p>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid md:grid-cols-3 gap-4 mb-12">

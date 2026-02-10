@@ -339,6 +339,7 @@ export interface PublicReport {
     top_fixes: string[];
     media_type: string;
     transcript?: string;
+    ad_copy?: string;
   };
   pdf_url: string | null;
   creative_url: string | null;

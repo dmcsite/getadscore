@@ -184,6 +184,7 @@ export async function POST(request: NextRequest) {
         top_fixes: scoreResult.topFixes || [],
         media_type: scoreResult.mediaType || "image",
         transcript: transcript || scoreResult.transcript,
+        ad_copy: finalAdCopy || undefined,
       },
       creativeUrl: finalCreativeUrl,
       thumbnailUrl: finalThumbnailUrl,
