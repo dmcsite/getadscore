@@ -116,33 +116,15 @@ export default async function PublicReportPage({
                   {/* Creative */}
                   <div className="relative bg-zinc-800">
                     {report_data.media_type === "video" ? (
-                      // For videos: show thumbnail image with play overlay, or video player
-                      report.thumbnail_url ? (
-                        <div className="relative">
-                          <img
-                            src={report.thumbnail_url}
-                            alt={report.ad_name}
-                            className="w-full h-auto"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
-                              <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        // No thumbnail - show video player
-                        <video
-                          src={report.creative_url}
-                          className="w-full h-auto"
-                          controls
-                          muted
-                          playsInline
-                          preload="metadata"
-                        />
-                      )
+                      // For videos: show playable video with thumbnail as poster
+                      <video
+                        src={report.creative_url || undefined}
+                        poster={report.thumbnail_url || undefined}
+                        className="w-full h-auto"
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
                     ) : (
                       // For images: display directly, preserving aspect ratio
                       <img
