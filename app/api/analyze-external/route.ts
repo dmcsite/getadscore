@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdById, downloadCreative } from "@/lib/foreplay";
 import { savePublicReport } from "@/lib/db";
 
+export const maxDuration = 120; // Allow 2 minutes for video processing
+
 // Score creative by calling the score API with multipart form data
 async function scoreCreative(
   buffer: Buffer,
@@ -81,13 +83,20 @@ async function scoreCreative(
 
   if (!response.ok) {
     let errorMsg = "Failed to score creative";
+    let errorDetails = "";
     try {
       const error = await response.json();
       errorMsg = error.error || errorMsg;
+      errorDetails = error.details || JSON.stringify(error);
     } catch {
-      // ignore parse error
+      try {
+        errorDetails = await response.text();
+      } catch {
+        errorDetails = `Status ${response.status}`;
+      }
     }
-    throw new Error(errorMsg);
+    console.error(`Score API failed (${response.status}):`, errorMsg, errorDetails);
+    throw new Error(`${errorMsg} (${response.status})`);
   }
 
   return response.json();

@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 120; // Allow 2 minutes for video processing
 import { writeFile, unlink, mkdir, readFile } from "fs/promises";
 import { createReadStream } from "fs";
 import { join } from "path";

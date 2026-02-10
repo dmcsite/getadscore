@@ -122,37 +122,46 @@ async function processContact(contact: ApolloContact): Promise<ProcessResult> {
           ? "https://www.getadscore.com/api/analyze-external"
           : "http://localhost:3000/api/analyze-external";
 
-      const analyzeResponse = await fetch(analyzeUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          creativeUrl: ads[0].creativeUrl,
-          brandName: brandName || contact.company || cleanDomain,
-          adCopy: ads[0].adCopy,
-          thumbnailUrl: ads[0].thumbnail,
-        }),
-      });
+      try {
+        const analyzeResponse = await fetch(analyzeUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creativeUrl: ads[0].creativeUrl,
+            brandName: brandName || contact.company || cleanDomain,
+            adCopy: ads[0].adCopy,
+            thumbnailUrl: ads[0].thumbnail,
+          }),
+        });
 
-      if (analyzeResponse.ok) {
-        const analyzeData = await analyzeResponse.json();
-        reportUrl = analyzeData.reportUrl;
-        slug = analyzeData.slug;
-        score = analyzeData.score;
-        verdict = analyzeData.verdict;
-        brandName = analyzeData.brandName || brandName;
+        if (analyzeResponse.ok) {
+          const analyzeData = await analyzeResponse.json();
+          reportUrl = analyzeData.reportUrl;
+          slug = analyzeData.slug;
+          score = analyzeData.score;
+          verdict = analyzeData.verdict;
+          brandName = analyzeData.brandName || brandName;
 
-        // Get top fix from report
-        if (analyzeData.slug) {
-          const reportResponse = await fetch(
-            process.env.NODE_ENV === "production"
-              ? `https://www.getadscore.com/api/report/${analyzeData.slug}`
-              : `http://localhost:3000/api/report/${analyzeData.slug}`
-          );
-          if (reportResponse.ok) {
-            const reportData = await reportResponse.json();
-            topFix = reportData.report?.report_data?.top_fixes?.[0] || null;
+          // Get top fix from report
+          if (analyzeData.slug) {
+            const reportResponse = await fetch(
+              process.env.NODE_ENV === "production"
+                ? `https://www.getadscore.com/api/report/${analyzeData.slug}`
+                : `http://localhost:3000/api/report/${analyzeData.slug}`
+            );
+            if (reportResponse.ok) {
+              const reportData = await reportResponse.json();
+              topFix = reportData.report?.report_data?.top_fixes?.[0] || null;
+            }
           }
+        } else {
+          // Log the error but continue - we'll save as a lead without a score
+          const errorData = await analyzeResponse.json().catch(() => ({}));
+          console.error(`Analysis failed for ${cleanDomain}:`, errorData.error || analyzeResponse.status);
         }
+      } catch (analyzeError) {
+        console.error(`Analysis error for ${cleanDomain}:`, analyzeError);
+        // Continue without score
       }
     }
 
