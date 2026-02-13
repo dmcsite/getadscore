@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findContact } from "@/lib/hunter";
+import { findContact } from "@/lib/apollo";
+
+// Note: This endpoint is kept at /api/hunter for backwards compatibility
+// but now uses Apollo for contact enrichment
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,11 +29,11 @@ export async function POST(request: NextRequest) {
       titles && titles.length > 0 ? titles : undefined
     );
 
-    if (!contact) {
+    if (!contact || !contact.email) {
       return NextResponse.json({
         success: true,
         found: false,
-        message: "No contacts found for this domain",
+        message: "No contacts with email found for this domain",
       });
     }
 
@@ -43,10 +46,10 @@ export async function POST(request: NextRequest) {
       title: contact.title,
       email: contact.email,
       linkedin: contact.linkedin,
-      confidence: contact.confidence,
+      confidence: 85, // Apollo doesn't return confidence, use a default
     });
   } catch (error) {
-    console.error("Hunter find-contact error:", error);
+    console.error("Apollo find-contact error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to find contact" },
       { status: 500 }

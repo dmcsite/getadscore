@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { discoverBrands, extractDomainFromBrand } from "@/lib/foreplay";
 import { getLeadByDomain } from "@/lib/db";
-import { findContact } from "@/lib/hunter";
+import { findContact } from "@/lib/apollo";
 
-export const maxDuration = 120; // Allow more time for Hunter lookups
+export const maxDuration = 120; // Allow more time for Apollo lookups
 
 // Domains to exclude (social media, landing page builders, etc.)
 const EXCLUDED_DOMAINS = [
@@ -182,13 +182,13 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Do Hunter.io lookup if requested
+      // Do Apollo lookup if requested
       if (includeContact) {
         try {
           const contact = await findContact(domain);
 
-          if (!contact) {
-            prospect.disqualifyReason = "No contact found";
+          if (!contact || !contact.email) {
+            prospect.disqualifyReason = "No contact with email found";
             prospects.push(prospect);
             continue;
           }
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
           };
           prospect.qualified = true;
         } catch (error) {
-          console.error(`Hunter lookup failed for ${domain}:`, error);
+          console.error(`Apollo lookup failed for ${domain}:`, error);
           prospect.disqualifyReason = "Contact lookup failed";
         }
       } else {
@@ -241,9 +241,9 @@ export async function POST(request: NextRequest) {
 
       prospects.push(prospect);
 
-      // Small delay between Hunter requests to avoid rate limits
+      // Small delay between Apollo requests to avoid rate limits
       if (includeContact) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
 

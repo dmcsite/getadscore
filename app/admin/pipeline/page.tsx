@@ -98,7 +98,7 @@ Geoff`;
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Pipeline Test</h1>
         <p className="text-gray-400 mb-8">
-          Test the full outreach pipeline: Foreplay → GetAdScore → Hunter.io
+          Test the full outreach pipeline: Foreplay → GetAdScore → Apollo
         </p>
 
         {/* Input Form */}

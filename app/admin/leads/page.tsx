@@ -653,7 +653,7 @@ PS - Reply "stop" if you'd rather not hear from me.`;
           <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-800/50 rounded-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Discover Pre-Qualified Leads</h2>
             <p className="text-sm text-gray-400 mb-4">
-              Finds brands running image ads, looks up decision-makers via Hunter.io, and filters for relevant titles.
+              Finds brands running image ads, looks up decision-makers via Apollo, and filters for relevant titles.
             </p>
 
             {/* Discovery Form */}
@@ -707,7 +707,7 @@ PS - Reply "stop" if you'd rather not hear from me.`;
             {discovering && (
               <div className="flex items-center gap-3 text-gray-400">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
-                <span>Searching Foreplay + Hunter.io (this may take a moment)...</span>
+                <span>Searching Foreplay + Apollo (this may take a moment)...</span>
               </div>
             )}
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchBrandsByDomain, searchAdsByBrandId } from "@/lib/foreplay";
-import { findContact } from "@/lib/hunter";
+import { findContact } from "@/lib/apollo";
 import {
   getCachedBrand,
   cacheBrand,
@@ -129,7 +129,7 @@ async function processDomain(domain: string): Promise<BatchResult> {
       }
     }
 
-    // Find contact
+    // Find contact via Apollo
     let contact: {
       name: string;
       firstName: string | null;
@@ -140,15 +140,15 @@ async function processDomain(domain: string): Promise<BatchResult> {
     } | null = null;
 
     try {
-      const hunterResult = await findContact(cleanDomain);
-      if (hunterResult) {
+      const apolloResult = await findContact(cleanDomain);
+      if (apolloResult?.email) {
         contact = {
-          name: hunterResult.name,
-          firstName: hunterResult.firstName,
-          lastName: hunterResult.lastName,
-          title: hunterResult.title,
-          email: hunterResult.email,
-          linkedin: hunterResult.linkedin,
+          name: apolloResult.name,
+          firstName: apolloResult.firstName,
+          lastName: apolloResult.lastName,
+          title: apolloResult.title,
+          email: apolloResult.email,
+          linkedin: apolloResult.linkedin,
         };
       }
     } catch {

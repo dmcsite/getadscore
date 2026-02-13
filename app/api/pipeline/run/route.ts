@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchBrandsByDomain, searchAdsByBrandId } from "@/lib/foreplay";
-import { findContact } from "@/lib/hunter";
+import { findContact } from "@/lib/apollo";
 import { getCachedBrand, cacheBrand, getRecentReportForBrand, saveLead, getLeadByDomain } from "@/lib/db";
 
 export const maxDuration = 60; // Allow up to 60 seconds for the full pipeline
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 3: Find contact via Hunter.io
+    // Step 3: Find contact via Apollo
     let contact: {
       name: string;
       firstName: string | null;
@@ -200,33 +200,33 @@ export async function POST(request: NextRequest) {
     } | null = null;
 
     try {
-      const hunterResult = await findContact(cleanDomain);
-      if (hunterResult) {
+      const apolloResult = await findContact(cleanDomain);
+      if (apolloResult?.email) {
         contact = {
-          name: hunterResult.name,
-          firstName: hunterResult.firstName,
-          lastName: hunterResult.lastName,
-          title: hunterResult.title,
-          email: hunterResult.email,
-          linkedin: hunterResult.linkedin,
+          name: apolloResult.name,
+          firstName: apolloResult.firstName,
+          lastName: apolloResult.lastName,
+          title: apolloResult.title,
+          email: apolloResult.email,
+          linkedin: apolloResult.linkedin,
         };
         results.push({
-          step: "hunter",
+          step: "apollo",
           status: "success",
           data: { name: contact.name, title: contact.title },
         });
       } else {
         results.push({
-          step: "hunter",
+          step: "apollo",
           status: "error",
-          error: "No contacts found",
+          error: "No contacts with email found",
         });
       }
     } catch (error) {
       results.push({
-        step: "hunter",
+        step: "apollo",
         status: "error",
-        error: error instanceof Error ? error.message : "Hunter search failed",
+        error: error instanceof Error ? error.message : "Apollo search failed",
       });
     }
 
