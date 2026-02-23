@@ -372,12 +372,26 @@ export default function Home() {
           setIsPaid(true);
           localStorage.setItem("isPaid", "true");
         } else {
+          // Record this usage
           await fetch("/api/free-check", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: userEmail, action: "record" }),
           });
-          setFreeReportUsed(true);
+
+          // Check remaining after recording - only gate if they've used all free reports
+          const afterRecord = await fetch("/api/free-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: userEmail, action: "check" }),
+          });
+          const afterData = await afterRecord.json();
+          setFreeReportsRemaining(afterData.freeReportsRemaining ?? 0);
+
+          // Only gate future reports if they've used all their free ones
+          if (afterData.freeReportsRemaining <= 0) {
+            setFreeReportUsed(true);
+          }
         }
       }
     } catch (err) {
