@@ -257,7 +257,7 @@ export interface FreeUser {
 }
 
 // Free tier limit for signed-in users
-const FREE_REPORT_LIMIT = 2;
+const FREE_REPORT_LIMIT = 1;
 
 // Check if email has used free tier
 export async function checkFreeUsage(email: string): Promise<{
