@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { getPublicReportBySlug } from "@/lib/db";
+import { getPublicReportBySlug, checkFreeUsage } from "@/lib/db";
 import Link from "next/link";
 import ViewTracker from "./ViewTracker";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 // Category display names and order
 const CATEGORY_ORDER = [
@@ -50,7 +50,16 @@ export default async function PublicReportPage({
 }) {
   const { slug } = await params;
   const { userId } = await auth();
-  const isSignedIn = !!userId;
+  const user = userId ? await currentUser() : null;
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+
+  // Check if user has full access (paid OR has free reports remaining)
+  let hasFullAccess = false;
+  if (userEmail) {
+    const freeStatus = await checkFreeUsage(userEmail);
+    hasFullAccess = freeStatus.isSubscribed || freeStatus.freeReportsRemaining > 0;
+  }
+
   const report = await getPublicReportBySlug(slug);
 
   if (!report) {
@@ -290,7 +299,7 @@ export default async function PublicReportPage({
         <div className="mb-12">
           <h2 className="text-xl font-semibold mb-6">Top Fixes</h2>
           <div className="space-y-3">
-            {isSignedIn ? (
+            {hasFullAccess ? (
               /* Signed in - show all fixes */
               report_data.top_fixes.map((fix, index) => (
                 <div
@@ -392,7 +401,7 @@ export default async function PublicReportPage({
         )}
 
         {/* CTA */}
-        {isSignedIn ? (
+        {hasFullAccess ? (
           <div className="text-center p-8 rounded-2xl bg-zinc-900/80 border border-zinc-700/50">
             <h2 className="text-2xl font-bold mb-3">Want to score more ads?</h2>
             <p className="text-zinc-400 mb-6">
