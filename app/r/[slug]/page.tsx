@@ -300,7 +300,7 @@ export default async function PublicReportPage({
             {/* Subtle upsell line */}
             <p className="text-zinc-500 text-sm pl-12 py-1">
               Want all 3 fixes plus detailed scoring?{" "}
-              <Link href="/signup" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+              <Link href="/sign-up" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
                 Create your free account
               </Link>
             </p>
@@ -383,7 +383,7 @@ export default async function PublicReportPage({
             Get all 3 fixes, detailed category breakdowns, and unlimited ad scoring with a free account.
           </p>
           <Link
-            href="/signup"
+            href="/sign-up"
             className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all text-white font-semibold text-lg shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02]"
           >
             Create Free Account
