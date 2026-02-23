@@ -57,3 +57,21 @@ CREATE TABLE IF NOT EXISTS report_views (
 -- Indexes for report views
 CREATE INDEX IF NOT EXISTS idx_report_views_slug ON report_views(report_slug);
 CREATE INDEX IF NOT EXISTS idx_report_views_viewed_at ON report_views(viewed_at);
+
+-- Free users table (tracks free tier usage)
+CREATE TABLE IF NOT EXISTS free_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  used_free_at TIMESTAMP,
+  free_reports_used INT DEFAULT 0,
+  subscribed_at TIMESTAMP,
+  plan_type VARCHAR(20),
+  stripe_customer_id VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_free_users_email ON free_users(email);
+
+-- Migration: Add free_reports_used column if it doesn't exist
+-- Run this if upgrading from old schema:
+-- ALTER TABLE free_users ADD COLUMN IF NOT EXISTS free_reports_used INT DEFAULT 0;

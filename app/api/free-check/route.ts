@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
         hasUsedFree: status.hasUsedFree,
         isSubscribed: status.isSubscribed,
         planType: status.planType,
+        freeReportsUsed: status.freeReportsUsed,
+        freeReportsRemaining: status.freeReportsRemaining,
       });
     }
 

@@ -256,24 +256,49 @@ export interface FreeUser {
   created_at: string;
 }
 
+// Free tier limit for signed-in users
+const FREE_REPORT_LIMIT = 2;
+
 // Check if email has used free tier
-export async function checkFreeUsage(email: string): Promise<{ hasUsedFree: boolean; isSubscribed: boolean; planType: string | null }> {
+export async function checkFreeUsage(email: string): Promise<{
+  hasUsedFree: boolean;
+  isSubscribed: boolean;
+  planType: string | null;
+  freeReportsUsed: number;
+  freeReportsRemaining: number;
+}> {
   const normalizedEmail = email.toLowerCase().trim();
 
   const result = await getDb()`
-    SELECT used_free_at, subscribed_at, plan_type FROM free_users
+    SELECT used_free_at, subscribed_at, plan_type, COALESCE(free_reports_used, 0) as free_reports_used FROM free_users
     WHERE email = ${normalizedEmail}
   `;
 
   if (result.length === 0) {
-    return { hasUsedFree: false, isSubscribed: false, planType: null };
+    return {
+      hasUsedFree: false,
+      isSubscribed: false,
+      planType: null,
+      freeReportsUsed: 0,
+      freeReportsRemaining: FREE_REPORT_LIMIT,
+    };
   }
 
-  const user = result[0] as { used_free_at: string | null; subscribed_at: string | null; plan_type: string | null };
+  const user = result[0] as {
+    used_free_at: string | null;
+    subscribed_at: string | null;
+    plan_type: string | null;
+    free_reports_used: number;
+  };
+
+  const freeReportsUsed = user.free_reports_used || 0;
+
   return {
-    hasUsedFree: user.used_free_at !== null,
+    hasUsedFree: freeReportsUsed >= FREE_REPORT_LIMIT,
     isSubscribed: user.subscribed_at !== null,
     planType: user.plan_type,
+    freeReportsUsed,
+    freeReportsRemaining: Math.max(0, FREE_REPORT_LIMIT - freeReportsUsed),
   };
 }
 
@@ -282,9 +307,11 @@ export async function recordFreeUsage(email: string): Promise<void> {
   const normalizedEmail = email.toLowerCase().trim();
 
   await getDb()`
-    INSERT INTO free_users (email, used_free_at)
-    VALUES (${normalizedEmail}, NOW())
-    ON CONFLICT (email) DO UPDATE SET used_free_at = NOW()
+    INSERT INTO free_users (email, used_free_at, free_reports_used)
+    VALUES (${normalizedEmail}, NOW(), 1)
+    ON CONFLICT (email) DO UPDATE SET
+      used_free_at = NOW(),
+      free_reports_used = COALESCE(free_users.free_reports_used, 0) + 1
   `;
 }
 
