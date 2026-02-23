@@ -379,7 +379,8 @@ export default function Home() {
             body: JSON.stringify({ email: userEmail, action: "record" }),
           });
 
-          // Check remaining after recording - only gate if they've used all free reports
+          // Update remaining count for display, but DON'T gate current results
+          // Gating will apply on next page load or next scoring attempt
           const afterRecord = await fetch("/api/free-check", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -387,11 +388,7 @@ export default function Home() {
           });
           const afterData = await afterRecord.json();
           setFreeReportsRemaining(afterData.freeReportsRemaining ?? 0);
-
-          // Only gate future reports if they've used all their free ones
-          if (afterData.freeReportsRemaining <= 0) {
-            setFreeReportUsed(true);
-          }
+          // Don't call setFreeReportUsed(true) here - let them see current results
         }
       }
     } catch (err) {
