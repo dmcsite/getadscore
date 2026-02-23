@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getPublicReportBySlug } from "@/lib/db";
 import Link from "next/link";
 import ViewTracker from "./ViewTracker";
+import { auth } from "@clerk/nextjs/server";
 
 // Category display names and order
 const CATEGORY_ORDER = [
@@ -48,6 +49,8 @@ export default async function PublicReportPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const { userId } = await auth();
+  const isSignedIn = !!userId;
   const report = await getPublicReportBySlug(slug);
 
   if (!report) {
@@ -287,68 +290,86 @@ export default async function PublicReportPage({
         <div className="mb-12">
           <h2 className="text-xl font-semibold mb-6">Top Fixes</h2>
           <div className="space-y-3">
-            {/* Fix #1 - Shown fully */}
-            {report_data.top_fixes[0] && (
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-semibold">
-                  1
-                </span>
-                <p className="text-zinc-300 pt-1">{report_data.top_fixes[0]}</p>
-              </div>
-            )}
-
-            {/* Subtle upsell line */}
-            <p className="text-zinc-500 text-sm pl-12 py-1">
-              Want all 3 fixes plus detailed scoring?{" "}
-              <Link href="/sign-up" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
-                Create your free account
-              </Link>
-            </p>
-
-            {/* Fix #2 - Blurred with lock */}
-            {report_data.top_fixes[1] && (
-              <div className="relative">
-                <div className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-700/50 text-zinc-500 flex items-center justify-center font-semibold">
-                    2
+            {isSignedIn ? (
+              /* Signed in - show all fixes */
+              report_data.top_fixes.map((fix, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800"
+                >
+                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-semibold">
+                    {index + 1}
                   </span>
-                  <p className="text-zinc-300 pt-1 select-none" style={{ filter: "blur(5px)" }}>
-                    {report_data.top_fixes[1]}
-                  </p>
+                  <p className="text-zinc-300 pt-1">{fix}</p>
                 </div>
-                {/* Lock overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/60 rounded-xl">
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span className="text-sm font-medium">Sign up to unlock 2 more fixes</span>
+              ))
+            ) : (
+              /* Not signed in - gate fixes 2 and 3 */
+              <>
+                {/* Fix #1 - Shown fully */}
+                {report_data.top_fixes[0] && (
+                  <div className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-semibold">
+                      1
+                    </span>
+                    <p className="text-zinc-300 pt-1">{report_data.top_fixes[0]}</p>
                   </div>
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Fix #3 - Blurred with lock */}
-            {report_data.top_fixes[2] && (
-              <div className="relative">
-                <div className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-700/50 text-zinc-500 flex items-center justify-center font-semibold">
-                    3
-                  </span>
-                  <p className="text-zinc-300 pt-1 select-none" style={{ filter: "blur(5px)" }}>
-                    {report_data.top_fixes[2]}
-                  </p>
-                </div>
-                {/* Lock overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/60 rounded-xl">
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span className="text-sm font-medium">Sign up to unlock 2 more fixes</span>
+                {/* Subtle upsell line */}
+                <p className="text-zinc-500 text-sm pl-12 py-1">
+                  Want all 3 fixes plus detailed scoring?{" "}
+                  <Link href="/sign-up" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+                    Create your free account
+                  </Link>
+                </p>
+
+                {/* Fix #2 - Blurred with lock */}
+                {report_data.top_fixes[1] && (
+                  <div className="relative">
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-700/50 text-zinc-500 flex items-center justify-center font-semibold">
+                        2
+                      </span>
+                      <p className="text-zinc-300 pt-1 select-none" style={{ filter: "blur(5px)" }}>
+                        {report_data.top_fixes[1]}
+                      </p>
+                    </div>
+                    {/* Lock overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/60 rounded-xl">
+                      <div className="flex items-center gap-2 text-zinc-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span className="text-sm font-medium">Sign up to unlock 2 more fixes</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
+
+                {/* Fix #3 - Blurred with lock */}
+                {report_data.top_fixes[2] && (
+                  <div className="relative">
+                    <div className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-700/50 text-zinc-500 flex items-center justify-center font-semibold">
+                        3
+                      </span>
+                      <p className="text-zinc-300 pt-1 select-none" style={{ filter: "blur(5px)" }}>
+                        {report_data.top_fixes[2]}
+                      </p>
+                    </div>
+                    {/* Lock overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/60 rounded-xl">
+                      <div className="flex items-center gap-2 text-zinc-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span className="text-sm font-medium">Sign up to unlock 2 more fixes</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -371,28 +392,46 @@ export default async function PublicReportPage({
         )}
 
         {/* CTA */}
-        <div className="text-center p-10 rounded-2xl bg-gradient-to-b from-indigo-950/50 to-zinc-900/80 border border-indigo-500/20">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium mb-4">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Free Account
+        {isSignedIn ? (
+          <div className="text-center p-8 rounded-2xl bg-zinc-900/80 border border-zinc-700/50">
+            <h2 className="text-2xl font-bold mb-3">Want to score more ads?</h2>
+            <p className="text-zinc-400 mb-6">
+              Get instant feedback on your creatives before you spend.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors text-white font-medium"
+            >
+              Score Another Ad
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">Unlock your full report + score all your ads</h2>
-          <p className="text-zinc-400 mb-8 max-w-md mx-auto">
-            Get all 3 fixes, detailed category breakdowns, and unlimited ad scoring with a free account.
-          </p>
-          <Link
-            href="/sign-up"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all text-white font-semibold text-lg shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02]"
-          >
-            Create Free Account
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
-          <p className="text-zinc-500 text-sm mt-4">No credit card required</p>
-        </div>
+        ) : (
+          <div className="text-center p-10 rounded-2xl bg-gradient-to-b from-indigo-950/50 to-zinc-900/80 border border-indigo-500/20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium mb-4">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Free Account
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Unlock your full report + score all your ads</h2>
+            <p className="text-zinc-400 mb-8 max-w-md mx-auto">
+              Get all 3 fixes, detailed category breakdowns, and unlimited ad scoring with a free account.
+            </p>
+            <Link
+              href="/sign-up"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all text-white font-semibold text-lg shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02]"
+            >
+              Create Free Account
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+            <p className="text-zinc-500 text-sm mt-4">No credit card required</p>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
