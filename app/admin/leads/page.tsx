@@ -23,36 +23,22 @@ interface Lead {
   contacted_at: string | null;
 }
 
-interface ProspectContact {
-  name: string;
-  firstName: string | null;
-  title: string | null;
-  email: string;
-  linkedin: string | null;
-}
-
 interface Prospect {
-  brandId: string;
-  brandName: string;
   domain: string;
-  avatar?: string;
+  brandName: string | null;
+  hasAds: boolean;
+  score: number | null;
+  verdict: string | null;
+  reportUrl: string | null;
+  contact: {
+    name: string;
+    title: string | null;
+    email: string | null;
+    linkedin: string | null;
+  } | null;
   alreadyLead: boolean;
-  contact?: ProspectContact;
   qualified: boolean;
-  disqualifyReason?: string;
-}
-
-interface BatchResult {
-  domain: string;
-  success: boolean;
-  brand?: string;
-  score?: number;
-  reportUrl?: string;
-  contactEmail?: string;
-  leadId?: string;
-  error?: string;
-  skipped?: boolean;
-  skipReason?: string;
+  disqualifyReason: string | null;
 }
 
 interface ApolloContact {
@@ -76,24 +62,16 @@ interface ApolloResult {
   error?: string;
 }
 
-// Valid Foreplay niches
+// Available niches from curated domain lists
 const NICHES = [
+  { value: "supplements", label: "Supplements" },
+  { value: "skincare", label: "Skincare" },
   { value: "beauty", label: "Beauty" },
   { value: "health/wellness", label: "Health & Wellness" },
-  { value: "fashion", label: "Fashion" },
   { value: "food/drink", label: "Food & Drink" },
-  { value: "home/garden", label: "Home & Garden" },
-  { value: "pets", label: "Pets" },
-  { value: "jewelry/watches", label: "Jewelry & Watches" },
-  { value: "parenting", label: "Parenting" },
-  { value: "accessories", label: "Accessories" },
-  { value: "app/software", label: "App & Software" },
-  { value: "entertainment", label: "Entertainment" },
-  { value: "education", label: "Education" },
-  { value: "business/professional", label: "Business" },
-  { value: "service business", label: "Service Business" },
-  { value: "real estate", label: "Real Estate" },
-  { value: "other", label: "Other" },
+  { value: "pet", label: "Pet" },
+  { value: "fashion", label: "Fashion" },
+  { value: "home/kitchen", label: "Home & Kitchen" },
 ];
 
 const STATUS_COLORS: Record<LeadStatus, string> = {
@@ -132,16 +110,12 @@ export default function LeadsPage() {
 
   // Discover state
   const [showDiscover, setShowDiscover] = useState(false);
-  const [discoverNiche, setDiscoverNiche] = useState("beauty");
+  const [discoverNiche, setDiscoverNiche] = useState("supplements");
   const [discoverLimit, setDiscoverLimit] = useState(5);
-  const [usUkOnly, setUsUkOnly] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [qualifiedProspects, setQualifiedProspects] = useState<Prospect[]>([]);
   const [disqualifiedProspects, setDisqualifiedProspects] = useState<Prospect[]>([]);
   const [showDisqualified, setShowDisqualified] = useState(false);
-  const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
-  const [processing, setProcessing] = useState(false);
-  const [batchResults, setBatchResults] = useState<BatchResult[] | null>(null);
 
   // Apollo import state
   const [showApolloImport, setShowApolloImport] = useState(false);
@@ -201,7 +175,6 @@ export default function LeadsPage() {
     setDiscovering(true);
     setQualifiedProspects([]);
     setDisqualifiedProspects([]);
-    setBatchResults(null);
 
     try {
       const response = await fetch("/api/prospect/discover", {
@@ -210,8 +183,6 @@ export default function LeadsPage() {
         body: JSON.stringify({
           niche: discoverNiche,
           limit: discoverLimit,
-          usUkOnly,
-          includeContact: true,
         }),
       });
 
@@ -220,61 +191,18 @@ export default function LeadsPage() {
       if (data.success) {
         setQualifiedProspects(data.qualified || []);
         setDisqualifiedProspects(data.disqualified || []);
-        // Pre-select all qualified prospects
-        setSelectedProspects(new Set(data.qualified?.map((p: Prospect) => p.domain) || []));
+        // Refresh leads list since qualified prospects are auto-saved
+        if (data.qualified && data.qualified.length > 0) {
+          fetchLeads();
+        }
+      } else if (data.error) {
+        alert(data.error);
       }
     } catch (error) {
       console.error("Failed to discover prospects:", error);
     } finally {
       setDiscovering(false);
     }
-  };
-
-  const runBatch = async () => {
-    if (selectedProspects.size === 0) return;
-
-    setProcessing(true);
-    setBatchResults(null);
-
-    try {
-      const response = await fetch("/api/prospect/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domains: Array.from(selectedProspects),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setBatchResults(data.results);
-        // Refresh leads list
-        fetchLeads();
-      }
-    } catch (error) {
-      console.error("Failed to process batch:", error);
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const toggleProspect = (domain: string) => {
-    const newSelected = new Set(selectedProspects);
-    if (newSelected.has(domain)) {
-      newSelected.delete(domain);
-    } else {
-      newSelected.add(domain);
-    }
-    setSelectedProspects(newSelected);
-  };
-
-  const selectAllQualified = () => {
-    setSelectedProspects(new Set(qualifiedProspects.map((p) => p.domain)));
-  };
-
-  const deselectAllProspects = () => {
-    setSelectedProspects(new Set());
   };
 
   const updateStatus = async (leadId: string, status: LeadStatus) => {
@@ -526,53 +454,60 @@ PS - Reply "stop" if you'd rather not hear from me.`;
 
   const ProspectCard = ({ prospect, isQualified }: { prospect: Prospect; isQualified: boolean }) => (
     <div
-      onClick={() => isQualified && !prospect.alreadyLead && toggleProspect(prospect.domain)}
       className={`p-4 rounded-lg border transition-colors ${
         prospect.alreadyLead
-          ? "bg-gray-800/50 border-gray-700 opacity-50 cursor-not-allowed"
+          ? "bg-gray-800/50 border-gray-700 opacity-50"
           : isQualified
-          ? selectedProspects.has(prospect.domain)
-            ? "bg-green-900/30 border-green-600 cursor-pointer"
-            : "bg-gray-800 border-gray-700 hover:border-gray-600 cursor-pointer"
+          ? "bg-green-900/30 border-green-600"
           : "bg-gray-800/50 border-gray-700"
       }`}
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
-        {prospect.avatar && (
-          <img
-            src={prospect.avatar}
-            alt=""
-            className="w-8 h-8 rounded-full"
-          />
-        )}
         <div className="flex-1 min-w-0">
-          <div className="font-medium truncate">{prospect.brandName}</div>
+          <div className="font-medium truncate">{prospect.brandName || prospect.domain}</div>
           <div className="text-xs text-gray-500 truncate">{prospect.domain}</div>
         </div>
-        {isQualified && (
-          <div className="flex-shrink-0">
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-              selectedProspects.has(prospect.domain)
-                ? "bg-green-600 border-green-600"
-                : "border-gray-600"
-            }`}>
-              {selectedProspects.has(prospect.domain) && (
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </div>
+        {/* Score badge */}
+        {prospect.score !== null && (
+          <div className={`text-lg font-bold ${
+            prospect.score >= 80 ? "text-green-400" :
+            prospect.score >= 60 ? "text-yellow-400" : "text-red-400"
+          }`}>
+            {prospect.score}
           </div>
         )}
       </div>
+
+      {/* Verdict & Report */}
+      {prospect.verdict && (
+        <div className="mb-2">
+          <span className={`text-xs px-2 py-0.5 rounded ${
+            prospect.verdict === "READY TO TEST" ? "bg-green-900/50 text-green-400" :
+            prospect.verdict === "NEEDS WORK" ? "bg-yellow-900/50 text-yellow-400" :
+            "bg-red-900/50 text-red-400"
+          }`}>
+            {prospect.verdict}
+          </span>
+          {prospect.reportUrl && (
+            <a
+              href={prospect.reportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-2 text-xs text-blue-400 hover:text-blue-300"
+            >
+              View Report
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Contact Info */}
       {prospect.contact ? (
         <div className="mt-2 pt-2 border-t border-gray-700">
           <div className="text-sm font-medium text-white">{prospect.contact.name}</div>
           <div className="text-xs text-purple-400">{prospect.contact.title || "No title"}</div>
-          <div className="text-xs text-gray-500 truncate mt-1">{prospect.contact.email}</div>
+          <div className="text-xs text-gray-500 truncate mt-1">{prospect.contact.email || "No email"}</div>
         </div>
       ) : (
         <div className="mt-2 pt-2 border-t border-gray-700">
@@ -592,6 +527,13 @@ PS - Reply "stop" if you'd rather not hear from me.`;
         <div className="mt-2">
           <span className="text-xs bg-red-900/50 text-red-400 px-2 py-0.5 rounded">
             {prospect.disqualifyReason}
+          </span>
+        </div>
+      )}
+      {prospect.hasAds && !prospect.alreadyLead && isQualified && (
+        <div className="mt-2">
+          <span className="text-xs bg-green-900/50 text-green-400 px-2 py-0.5 rounded">
+            Saved as lead
           </span>
         </div>
       )}
@@ -653,7 +595,7 @@ PS - Reply "stop" if you'd rather not hear from me.`;
           <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-800/50 rounded-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Discover Pre-Qualified Leads</h2>
             <p className="text-sm text-gray-400 mb-4">
-              Finds brands running image ads, looks up decision-makers via Apollo, and filters for relevant titles.
+              Processes curated DTC brand domains: checks for active ads, scores their creatives, and finds decision-maker contacts via Apollo. Leads are automatically saved.
             </p>
 
             {/* Discovery Form */}
@@ -673,88 +615,51 @@ PS - Reply "stop" if you'd rather not hear from me.`;
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Find</label>
+                <label className="block text-sm text-gray-400 mb-1">Find (qualified)</label>
                 <input
                   type="number"
                   value={discoverLimit}
-                  onChange={(e) => setDiscoverLimit(Math.min(10, Math.max(1, parseInt(e.target.value) || 5)))}
+                  onChange={(e) => setDiscoverLimit(Math.min(20, Math.max(1, parseInt(e.target.value) || 5)))}
                   className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
                   min={1}
-                  max={10}
+                  max={20}
                 />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="usUkOnly"
-                  checked={usUkOnly}
-                  onChange={(e) => setUsUkOnly(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                />
-                <label htmlFor="usUkOnly" className="text-sm text-gray-300">
-                  US/UK only
-                </label>
               </div>
               <button
                 onClick={discoverProspects}
                 disabled={discovering}
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 rounded-lg font-medium transition-colors"
               >
-                {discovering ? "Searching..." : "Find Prospects"}
+                {discovering ? "Processing..." : "Find Prospects"}
               </button>
             </div>
 
             {discovering && (
               <div className="flex items-center gap-3 text-gray-400">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
-                <span>Searching Foreplay + Apollo (this may take a moment)...</span>
+                <span>Processing domains: checking ads, scoring, finding contacts... This may take a few minutes.</span>
               </div>
             )}
 
-            {/* Qualified Prospects */}
+            {/* Qualified Prospects - Already saved as leads */}
             {qualifiedProspects.length > 0 && (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-medium text-green-400">
-                      {qualifiedProspects.length} Qualified
+                      {qualifiedProspects.length} New Leads Created
                     </span>
                     <span className="text-sm text-gray-500">
-                      ({selectedProspects.size} selected)
+                      (scored + contact found)
                     </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={selectAllQualified}
-                      className="text-sm text-purple-400 hover:text-purple-300"
-                    >
-                      Select All
-                    </button>
-                    <span className="text-gray-600">|</span>
-                    <button
-                      onClick={deselectAllProspects}
-                      className="text-sm text-gray-400 hover:text-gray-300"
-                    >
-                      Deselect All
-                    </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {qualifiedProspects.map((prospect) => (
                     <ProspectCard key={prospect.domain} prospect={prospect} isQualified={true} />
                   ))}
                 </div>
-
-                <button
-                  onClick={runBatch}
-                  disabled={processing || selectedProspects.size === 0}
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
-                >
-                  {processing
-                    ? "Processing..."
-                    : `Run Pipeline on ${selectedProspects.size} Prospects`}
-                </button>
               </div>
             )}
 
@@ -788,55 +693,39 @@ PS - Reply "stop" if you'd rather not hear from me.`;
             {/* No results message */}
             {!discovering && qualifiedProspects.length === 0 && disqualifiedProspects.length === 0 && (
               <div className="text-gray-500 text-sm mt-4">
-                Click &quot;Find Prospects&quot; to discover brands in this niche.
+                Select a niche and click &quot;Find Prospects&quot; to process curated brand domains.
               </div>
             )}
 
-            {/* Batch Results */}
-            {batchResults && (
+            {/* Discovery Summary */}
+            {(qualifiedProspects.length > 0 || disqualifiedProspects.length > 0) && (
               <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
-                <h3 className="font-medium mb-2">Batch Results</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                <h3 className="font-medium mb-2">Discovery Summary</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <div className="text-2xl font-bold text-green-400">
-                      {batchResults.filter((r) => r.success && !r.skipped).length}
+                      {qualifiedProspects.length}
                     </div>
                     <div className="text-xs text-gray-500">New Leads</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-yellow-400">
-                      {batchResults.filter((r) => r.skipped).length}
+                      {disqualifiedProspects.filter((p) => p.disqualifyReason === "No active ads found").length}
                     </div>
-                    <div className="text-xs text-gray-500">Skipped</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-red-400">
-                      {batchResults.filter((r) => !r.success).length}
-                    </div>
-                    <div className="text-xs text-gray-500">Failed</div>
+                    <div className="text-xs text-gray-500">No Ads</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-blue-400">
-                      {batchResults.filter((r) => r.contactEmail).length}
+                      {qualifiedProspects.filter((p) => p.contact?.email).length}
                     </div>
-                    <div className="text-xs text-gray-500">With Contact</div>
+                    <div className="text-xs text-gray-500">With Email</div>
                   </div>
-                </div>
-                <div className="text-xs text-gray-500">
-                  {batchResults.map((r) => (
-                    <span
-                      key={r.domain}
-                      className={`inline-block mr-2 mb-1 px-2 py-0.5 rounded ${
-                        r.success
-                          ? r.skipped
-                            ? "bg-yellow-900/50 text-yellow-400"
-                            : "bg-green-900/50 text-green-400"
-                          : "bg-red-900/50 text-red-400"
-                      }`}
-                    >
-                      {r.domain}: {r.success ? (r.skipped ? "skipped" : `${r.score}`) : "failed"}
-                    </span>
-                  ))}
+                  <div>
+                    <div className="text-2xl font-bold text-purple-400">
+                      {disqualifiedProspects.filter((p) => p.alreadyLead).length}
+                    </div>
+                    <div className="text-xs text-gray-500">Already Leads</div>
+                  </div>
                 </div>
               </div>
             )}

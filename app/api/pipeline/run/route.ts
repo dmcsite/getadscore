@@ -8,7 +8,15 @@ export const maxDuration = 60; // Allow up to 60 seconds for the full pipeline
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { domain, forceRefresh } = body;
+    const {
+      domain,
+      forceRefresh,
+      // Optional contact info for Apollo enrichment
+      contact_name,
+      contact_linkedin_url,
+      // Allow overriding brand name
+      brand_name,
+    } = body;
 
     if (!domain) {
       return NextResponse.json(
@@ -32,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Get brand (from cache or Foreplay API)
     let brandId: string | null = null;
-    let brandName: string | null = null;
+    let brandName: string | null = brand_name || null; // Use provided brand name if available
     let ads: { id: string; creativeUrl: string; brandName: string; adCopy: string; thumbnail?: string }[] = [];
 
     try {
@@ -189,7 +197,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 3: Find contact via Apollo
+    // Step 3: Find contact via Apollo (only if ads were found/scored)
+    // Skip Apollo lookup if no ads - not a good lead without active ads
     let contact: {
       name: string;
       firstName: string | null;
@@ -199,8 +208,19 @@ export async function POST(request: NextRequest) {
       linkedin: string | null;
     } | null = null;
 
-    try {
-      const apolloResult = await findContact(cleanDomain);
+    // Only look up contacts if we have a score (meaning ads were found)
+    if (!score) {
+      results.push({
+        step: "apollo",
+        status: "skipped",
+        error: "No ads found - skipping contact lookup",
+      });
+    } else try {
+      const apolloResult = await findContact(cleanDomain, {
+        contactName: contact_name,
+        linkedinUrl: contact_linkedin_url,
+      });
+
       if (apolloResult?.email) {
         contact = {
           name: apolloResult.name,
@@ -213,14 +233,41 @@ export async function POST(request: NextRequest) {
         results.push({
           step: "apollo",
           status: "success",
-          data: { name: contact.name, title: contact.title },
+          data: { name: contact.name, title: contact.title, email: contact.email },
         });
-      } else {
+      } else if (apolloResult) {
+        // Apollo found a match but no email
         results.push({
           step: "apollo",
           status: "error",
-          error: "No contacts with email found",
+          error: "Contact found but no email available",
         });
+        contact = {
+          name: apolloResult.name,
+          firstName: apolloResult.firstName,
+          lastName: apolloResult.lastName,
+          title: apolloResult.title,
+          email: "",
+          linkedin: apolloResult.linkedin,
+        };
+      } else {
+        // No match found at all
+        results.push({
+          step: "apollo",
+          status: "error",
+          error: "No marketing contacts found for this domain",
+        });
+        // Still save provided contact info if available
+        if (contact_name) {
+          contact = {
+            name: contact_name,
+            firstName: null,
+            lastName: null,
+            title: null,
+            email: "",
+            linkedin: contact_linkedin_url || null,
+          };
+        }
       }
     } catch (error) {
       results.push({
@@ -228,11 +275,23 @@ export async function POST(request: NextRequest) {
         status: "error",
         error: error instanceof Error ? error.message : "Apollo search failed",
       });
+      // Still save provided contact info if available
+      if (contact_name) {
+        contact = {
+          name: contact_name,
+          firstName: null,
+          lastName: null,
+          title: null,
+          email: "",
+          linkedin: contact_linkedin_url || null,
+        };
+      }
     }
 
-    // Step 4: Save lead (if we have meaningful data)
+    // Step 4: Save lead (only if we have a score - meaning ads were found)
     let leadId: string | null = null;
-    if (brandName || contact?.email) {
+    const hasContactEmail = contact?.email && contact.email.length > 0;
+    if (score && (brandName || hasContactEmail || contact?.name)) {
       try {
         // Check if lead already exists for this domain
         const existingLead = await getLeadByDomain(cleanDomain);
@@ -248,7 +307,7 @@ export async function POST(request: NextRequest) {
             topFix: topFix || undefined,
             contactName: contact?.name,
             contactTitle: contact?.title || undefined,
-            contactEmail: contact?.email,
+            contactEmail: hasContactEmail ? contact?.email : undefined,
             contactLinkedin: contact?.linkedin || undefined,
           });
           leadId = lead.id;
@@ -272,6 +331,12 @@ export async function POST(request: NextRequest) {
           error: error instanceof Error ? error.message : "Failed to save lead",
         });
       }
+    } else if (!score) {
+      results.push({
+        step: "save_lead",
+        status: "skipped",
+        error: "No ads found - not saving as lead",
+      });
     }
 
     // Build response

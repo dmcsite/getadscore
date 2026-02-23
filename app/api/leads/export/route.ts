@@ -50,11 +50,15 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Escape CSV values
-    const escapeCSV = (value: string) => {
-      if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-        return `"${value.replace(/"/g, '""')}"`;
+    const escapeCSV = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) {
+        return "";
       }
-      return value;
+      const str = String(value);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
     };
 
     const csv = [
