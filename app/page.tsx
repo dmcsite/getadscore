@@ -3037,7 +3037,7 @@ export default function Home() {
       )}
 
       {/* CTA Section Above Pricing */}
-      {(hasFullAccess || !result) && (
+      {!result && (
       <section className="mt-20 py-16">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-zinc-100 mb-4">Ready to score your first ad?</h2>
@@ -3061,7 +3061,7 @@ export default function Home() {
       )}
 
       {/* Pricing Section - hidden when showing gated results (unlock overlay is the CTA) */}
-      {(hasFullAccess || !result) && (
+      {!result && (
       <section id="pricing" className="border-t border-zinc-800 py-20 bg-zinc-900/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -3193,7 +3193,7 @@ export default function Home() {
       )}
 
       {/* Why Trust the Score Section */}
-      {(hasFullAccess || !result) && (
+      {!result && (
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">Why Trust the Score</h2>
@@ -3231,7 +3231,7 @@ export default function Home() {
       )}
 
       {/* FAQ Section */}
-      {(hasFullAccess || !result) && (
+      {!result && (
       <section className="border-t border-zinc-800 py-16">
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-2xl font-bold text-center text-zinc-100 mb-8">Frequently Asked Questions</h2>
