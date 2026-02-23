@@ -118,6 +118,7 @@ export default function Home() {
 
   // Gating state
   const [freeReportUsed, setFreeReportUsed] = useState(false);
+  const [freeReportsRemaining, setFreeReportsRemaining] = useState(2);
   const [isPaid, setIsPaid] = useState(false);
   const [planType, setPlanType] = useState<string | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
@@ -155,6 +156,7 @@ export default function Home() {
         .then((res) => res.json())
         .then((data) => {
           setFreeReportUsed(data.hasUsedFree && !data.isSubscribed);
+          setFreeReportsRemaining(data.freeReportsRemaining ?? 2);
           if (data.isSubscribed) {
             setIsPaid(true);
             setPlanType(data.planType);
@@ -253,7 +255,7 @@ export default function Home() {
           setIsPaid(true);
           localStorage.setItem("isPaid", "true");
         } else if (!checkData.canUseFreeTier) {
-          setError("You've used your free analysis. Subscribe to continue scoring ads.");
+          setError("You've used your 2 free analyses. Subscribe to continue scoring ads.");
           setIsLoading(false);
           return;
         }
@@ -1553,7 +1555,9 @@ export default function Home() {
                       )}
                       {!isPaid && (
                         <p className="text-sm text-zinc-500 mt-1">
-                          {freeReportUsed ? "Free analysis used" : "1 free analysis available"}
+                          {freeReportsRemaining > 0
+                            ? `${freeReportsRemaining} free ${freeReportsRemaining === 1 ? "analysis" : "analyses"} remaining`
+                            : "Free analyses used"}
                         </p>
                       )}
                     </div>
@@ -2962,7 +2966,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-zinc-100 mb-2">Sign in to get your free report</h3>
-              <p className="text-zinc-400 text-sm mb-6">One free analysis per account. Takes 10 seconds.</p>
+              <p className="text-zinc-400 text-sm mb-6">2 free analyses per account. Takes 10 seconds.</p>
               <SignInButton mode="modal">
                 <button className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-colors">
                   Sign In / Sign Up
